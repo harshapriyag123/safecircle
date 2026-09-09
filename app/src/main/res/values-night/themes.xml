@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.SafeCircle" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="colorPrimaryVariant">@color/brand_dark</item>
+        <item name="colorSecondary">@color/warning</item>
+    </style>
+</resources>
