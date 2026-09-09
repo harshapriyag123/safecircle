@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/surface_soft">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="My Circle" android:textSize="30sp" android:textStyle="bold"
+            android:textColor="@color/ink" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="People who can notice, check in, and escalate — only with the permissions you choose." />
+        <LinearLayout android:id="@+id/guardianList" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical"
+            android:layout_marginTop="18dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/addGuardianButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="54dp"
+            android:text="Invite Guardian" />
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" app:cardCornerRadius="24dp" app:cardElevation="0dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:padding="22dp"
+                android:text="PRIVACY MODE&#10;&#10;Private by default. Guardians see status first; precise location can be released only after your configured escalation threshold." />
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</ScrollView>
