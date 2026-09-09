@@ -1,0 +1,3 @@
+# Copy this file to local.properties (do not commit the real file)
+sdk.dir=/path/to/Android/Sdk
+REVENUECAT_API_KEY=test_your_public_sdk_key_here
