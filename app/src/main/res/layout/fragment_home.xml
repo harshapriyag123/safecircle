@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/surface_soft">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SafeCircle" android:textStyle="bold" android:textSize="30sp"
+            android:textColor="@color/ink" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Someone should notice." android:textSize="16sp" android:layout_marginTop="4dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" app:cardCornerRadius="24dp" app:cardElevation="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="22dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="SAFETY READINESS" android:textStyle="bold" android:textSize="12sp" />
+                <TextView android:id="@+id/readinessScore" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="92/100" android:textSize="40sp"
+                    android:textStyle="bold" android:textColor="@color/brand_dark" />
+                <TextView android:id="@+id/safetyState" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="NORMAL" android:textStyle="bold"
+                    android:textColor="@color/brand" />
+                <TextView android:id="@+id/signalSummary" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                    android:text="ETA on schedule • Battery sufficient • Check-ins current" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" app:cardCornerRadius="24dp" app:cardElevation="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="22dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="ACTIVE SESSION" android:textStyle="bold" android:textSize="12sp" />
+                <TextView android:id="@+id/activeSessionTitle" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="No active session"
+                    android:textStyle="bold" android:textSize="22sp" android:layout_marginTop="8dp" />
+                <TextView android:id="@+id/activeSessionMeta" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Start before a walk, rideshare, meetup, or time alone."
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/startSessionButton"
+            android:layout_width="match_parent" android:layout_height="56dp"
+            android:layout_marginTop="18dp" android:text="Start Safety Session" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="10dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/checkInButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+                android:text="Check in" />
+            <Space android:layout_width="10dp" android:layout_height="1dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/safeButton"
+                android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+                android:text="I'm safe" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/simulateButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Demo: simulate concern state" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" android:padding="16dp"
+            android:background="@android:color/white"
+            android:text="Escalation ladder&#10;0m · gentle check-in&#10;+5m · primary guardian&#10;+10m · backup guardian&#10;+15m · unlock pre-authorized Safety Capsule" />
+    </LinearLayout>
+</ScrollView>
