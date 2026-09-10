@@ -17,10 +17,15 @@ from .models import (
     RevenueCatWebhookEnvelope,
     SessionPatch,
     SessionUpsert,
+    RegisterRequest,
+    LoginRequest,
 )
 from .security import (
     require_bearer,
     sign_guardian_token,
+    hash_password,
+    verify_password,
+    sign_access_token,
     token_hash,
     verify_guardian_token,
     verify_revenuecat_webhook,
@@ -34,11 +39,16 @@ def now_ms() -> int:
     return int(time.time() * 1000)
 
 
-def auth_or_401(authorization: str | None) -> None:
+def auth_or_401(authorization: str | None) -> str:
     try:
-        require_bearer(authorization)
+        return require_bearer(authorization)
     except PermissionError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+def assert_owner(user_id: str, owner_id: str) -> None:
+    if user_id != "demo-owner" and user_id != owner_id:
+        raise HTTPException(status_code=403, detail="Owner authorization failed")
 
 
 def guardian_token_or_401(token: str) -> dict[str, Any]:
@@ -191,6 +201,39 @@ if guardian_static is not None:
     app.mount("/guardian", StaticFiles(directory=guardian_static, html=True), name="guardian")
 
 
+
+
+@app.post("/v1/auth/register")
+def register(body: RegisterRequest) -> dict[str, Any]:
+    email = body.email.lower().strip()
+    user_id = "sc_" + uuid.uuid4().hex
+    try:
+        password_hash = hash_password(body.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not db.create_user(user_id, email, password_hash):
+        raise HTTPException(status_code=409, detail="Account already exists")
+
+    return {
+        "user_id": user_id,
+        "access_token": sign_access_token(user_id),
+        "token_type": "bearer",
+    }
+
+
+@app.post("/v1/auth/login")
+def login(body: LoginRequest) -> dict[str, Any]:
+    user = db.get_user_by_email(body.email)
+    if user is None or not verify_password(body.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return {
+        "user_id": user["id"],
+        "access_token": sign_access_token(user["id"]),
+        "token_type": "bearer",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {
@@ -205,7 +248,8 @@ def upsert_session(
     body: SessionUpsert,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
+    assert_owner(user_id, body.owner_id)
     db.upsert_session(body.model_dump())
     db.append_event(body.id, "SESSION_UPSERTED", {"state": body.state})
     return {"ok": True, "session_id": body.id}
@@ -216,10 +260,11 @@ def owner_get_session(
     session_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
     session = db.get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user_id, session["owner_id"])
     return session
 
 
@@ -229,10 +274,11 @@ def patch_session(
     body: SessionPatch,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
     current = db.get_session(session_id)
     if current is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user_id, current["owner_id"])
 
     updates = body.model_dump(exclude_none=True)
     current.update(updates)
@@ -246,10 +292,11 @@ def check_in(
     session_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
     session = db.get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user_id, session["owner_id"])
 
     session["last_check_in_at"] = now_ms()
     session["state"] = "NORMAL"
@@ -263,10 +310,11 @@ def resolve_session(
     session_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
     session = db.get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user_id, session["owner_id"])
 
     session["resolved"] = True
     session["resolved_at"] = now_ms()
@@ -281,7 +329,11 @@ def events(
     session_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
+    session = db.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user_id, session["owner_id"])
     return {"events": db.list_events(session_id)}
 
 
@@ -317,12 +369,13 @@ def create_guardian_invite(
     body: GuardianInviteCreate,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
     session = db.get_session(body.session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     if session["owner_id"] != body.owner_id:
         raise HTTPException(status_code=403, detail="Owner mismatch")
+    assert_owner(user_id, body.owner_id)
 
     invite_id = str(uuid.uuid4())
     expires_at = now_ms() + body.ttl_minutes * 60_000
