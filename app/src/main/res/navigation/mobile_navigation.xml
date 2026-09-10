@@ -7,7 +7,16 @@
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.harshapriya.safecircle.ui.home.HomeFragment"
-        android:label="@string/title_home" />
+        android:label="@string/title_home">
+        <action
+            android:id="@+id/action_navigation_home_to_session_setup"
+            app:destination="@id/navigation_session_setup" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_session_setup"
+        android:name="com.harshapriya.safecircle.ui.session.SessionSetupFragment"
+        android:label="Start Safety Session" />
 
     <fragment
         android:id="@+id/navigation_automations"
