@@ -78,9 +78,19 @@ def stage_for_session(session: dict[str, Any], current_ms: int) -> int | None:
 
 
 def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
-    state = session["state"]
     stage = stage_for_session(session, now_ms())
     privacy = session.get("privacy_mode") or "PRECISE_ON_ESCALATION"
+
+    # Guardian state must be derived from the canonical persisted session plus
+    # the server-side escalation clock. Never show a resolved session as live.
+    if bool(session["resolved"]):
+        state = "RESOLVED"
+    elif stage is not None and stage >= 15:
+        state = "ESCALATED"
+    elif stage is not None and stage >= 5 and session["state"] == "NORMAL":
+        state = "CONCERN"
+    else:
+        state = session["state"]
 
     result: dict[str, Any] = {
         "session_id": session["id"],
@@ -313,6 +323,8 @@ def check_in(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     assert_owner(user_id, session["owner_id"])
+    if bool(session["resolved"]):
+        raise HTTPException(status_code=409, detail="Resolved sessions cannot be checked in")
 
     session["last_check_in_at"] = now_ms()
     session["state"] = "NORMAL"
@@ -362,7 +374,7 @@ def ingest_events(
     acknowledged: list[str] = []
 
     for event in body.events[:500]:
-        created = db.append_event(
+        db.append_event(
             event.session_id,
             "CLIENT_" + event.event_type,
             {
@@ -371,10 +383,7 @@ def ingest_events(
                 "client_created_at": event.created_at,
             },
         )
-        if created:
-            acknowledged.append(event.id)
-        else:
-            acknowledged.append(event.id)
+        acknowledged.append(event.id)
 
     return {"acknowledged_event_ids": acknowledged}
 
@@ -425,7 +434,8 @@ def revoke_guardian_invite(
     owner_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
+    assert_owner(user_id, owner_id)
     if not db.revoke_invite(invite_id, owner_id):
         raise HTTPException(status_code=404, detail="Invite not found")
     return {"ok": True}
@@ -471,9 +481,8 @@ def revenuecat_webhook(
         active,
         product_id,
         expiration_at_ms,
-        event_type,
     )
-    return {"ok": True, "active": active}
+    return {"ok": True, "active": active, "event_type": event_type}
 
 
 @app.get("/v1/subscriptions/{app_user_id}")
@@ -482,9 +491,13 @@ def subscription_status(
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
     auth_or_401(authorization)
-    status = db.get_subscription(app_user_id, "safecircle_pro")
-    return status or {
-        "app_user_id": app_user_id,
-        "entitlement": "safecircle_pro",
-        "active": False,
-    }
+    status = db.get_subscription(app_user_id)
+    if status is None:
+        status = {
+            "app_user_id": app_user_id,
+            "entitlement_id": "safecircle_pro",
+            "is_active": False,
+            "product_id": None,
+            "expiration_at_ms": None,
+        }
+    return {"subscription": status}
