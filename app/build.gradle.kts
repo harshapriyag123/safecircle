@@ -10,6 +10,8 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use(::load)
 }
 val revenueCatApiKey = localProperties.getProperty("REVENUECAT_API_KEY", "")
+val safeCircleApiBaseUrl = localProperties.getProperty("SAFECIRCLE_API_BASE_URL", "")
+val safeCircleDemoApiToken = localProperties.getProperty("SAFECIRCLE_DEMO_API_TOKEN", "")
 
 android {
     namespace = "com.harshapriya.safecircle"
@@ -23,6 +25,8 @@ android {
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatApiKey\"")
+        buildConfigField("String", "SAFECIRCLE_API_BASE_URL", "\"$safeCircleApiBaseUrl\"")
+        buildConfigField("String", "SAFECIRCLE_DEMO_API_TOKEN", "\"$safeCircleDemoApiToken\"")
     }
 
     buildTypes {
