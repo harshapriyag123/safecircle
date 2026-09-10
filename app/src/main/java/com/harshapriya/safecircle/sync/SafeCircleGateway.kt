@@ -9,6 +9,7 @@ import com.harshapriya.safecircle.reliability.QueuedEvent
  */
 interface SafeCircleGateway {
     suspend fun upsertSession(payload: SessionSyncPayload): Boolean
+    suspend fun createGuardianInvite(sessionId: String, ownerId: String, role: String, ttlMinutes: Int): GuardianInviteLink
     suspend fun upload(events: List<QueuedEvent>): List<String>
     suspend fun sendGuardianAlert(sessionId: String, recipientId: String, message: String): DeliveryReceipt
     suspend fun publishGuardianSnapshot(sessionId: String, payloadJson: String): String
