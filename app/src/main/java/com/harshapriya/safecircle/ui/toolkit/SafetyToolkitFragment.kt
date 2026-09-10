@@ -15,6 +15,9 @@ class SafetyToolkitFragment : Fragment() {
         root.findViewById<MaterialButton>(R.id.toolkitSafePhrase).setOnClickListener {
             findNavController().navigate(R.id.action_navigation_toolkit_to_safephrase)
         }
+        root.findViewById<MaterialButton>(R.id.toolkitFakeCall).setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_toolkit_to_fake_call)
+        }
         root.findViewById<MaterialButton>(R.id.toolkitNearby).setOnClickListener {
             findNavController().navigate(R.id.action_navigation_toolkit_to_nearby)
         }
