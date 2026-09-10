@@ -6,143 +6,46 @@
   <title>SafeCircle Guardian Live</title>
   <style>
     :root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#eef4f2;color:#12211f}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;padding:24px;background:radial-gradient(circle at top,#dcece8 0,#eef4f2 38%,#f8faf9 100%)}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;padding:24px;background:radial-gradient(circle at top,#dcece8 0,#eef4f2 38%,#f8faf9 100%)}
     .shell{width:min(760px,100%);margin:24px auto;background:#fff;border:1px solid #dce7e4;border-radius:30px;padding:28px;box-shadow:0 22px 80px #173d3918}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{font-weight:850;font-size:28px;color:#173d39}
-    .pill{display:inline-flex;padding:8px 12px;border-radius:999px;background:#e4f1ef;color:#315e58;font-weight:750;font-size:13px}
-    h1{font-size:34px;margin:28px 0 8px}
-    .sub{color:#526664;line-height:1.55}
-    .status{margin:22px 0;padding:18px;border-radius:20px;background:#eef7f4;border:1px solid #d5e8e2}
-    .status strong{display:block;font-size:22px;margin-bottom:6px}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:18px 0}
-    .card{background:#f7faf9;border:1px solid #edf2f1;border-radius:20px;padding:18px}
-    .k{font-size:12px;color:#60716f;text-transform:uppercase;letter-spacing:.09em}
-    .v{font-size:20px;font-weight:780;margin-top:7px}
-    .timeline{margin:24px 0}
-    .step{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #edf2f1}
-    .dot{width:12px;height:12px;border-radius:50%;background:#315e58;margin-top:5px;flex:0 0 auto}
-    button{border:0;border-radius:16px;padding:15px 18px;font-weight:760;cursor:pointer;font-size:15px}
-    .primary{background:#315e58;color:white}.secondary{background:#eef3f2;color:#173d39}
-    .actions{display:flex;gap:12px;flex-wrap:wrap}
-    .privacy{margin-top:24px;padding:18px;border-left:4px solid #315e58;background:#f7faf9;line-height:1.55}
-    .danger{background:#fff1ee;border-color:#ffd9d0}.danger strong{color:#a84328}
-    @media(max-width:560px){.grid{grid-template-columns:1fr}.shell{padding:20px;border-radius:22px}h1{font-size:28px}}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-weight:850;font-size:28px;color:#173d39}.pill{display:inline-flex;padding:8px 12px;border-radius:999px;background:#e4f1ef;color:#315e58;font-weight:750;font-size:13px}
+    h1{font-size:34px;margin:28px 0 8px}.sub{color:#526664;line-height:1.55}.status{margin:22px 0;padding:18px;border-radius:20px;background:#eef7f4;border:1px solid #d5e8e2}.status strong{display:block;font-size:22px;margin-bottom:6px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:18px 0}.card{background:#f7faf9;border:1px solid #edf2f1;border-radius:20px;padding:18px}.k{font-size:12px;color:#60716f;text-transform:uppercase;letter-spacing:.09em}.v{font-size:20px;font-weight:780;margin-top:7px}.timeline{margin:24px 0}.step{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #edf2f1}.dot{width:12px;height:12px;border-radius:50%;background:#315e58;margin-top:5px;flex:0 0 auto}.dot.active{background:#c44732;box-shadow:0 0 0 5px #c4473220}button,a.action{border:0;border-radius:16px;padding:15px 18px;font-weight:760;cursor:pointer;font-size:15px;text-decoration:none;display:inline-block}.primary{background:#315e58;color:white}.secondary{background:#eef3f2;color:#173d39}.actions{display:flex;gap:12px;flex-wrap:wrap}.privacy{margin-top:24px;padding:18px;border-left:4px solid #315e58;background:#f7faf9;line-height:1.55}.danger{background:#fff1ee;border-color:#ffd9d0}.danger strong{color:#a84328}.resolved{background:#edf2f0;border-color:#dde5e1}.hidden{display:none!important}@media(max-width:560px){.grid{grid-template-columns:1fr}.shell{padding:20px;border-radius:22px}h1{font-size:28px}}
   </style>
 </head>
 <body>
   <main class="shell">
-    <div class="top">
-      <div class="brand">🛡️ SafeCircle</div>
-      <div class="pill">Guardian Live · Session scoped</div>
-    </div>
-
-    <h1 id="title">Walk Home session</h1>
-    <p class="sub">A temporary view for a trusted Guardian. This page is designed to expire with the Safety Session and reveal only user-authorized information.</p>
-
-    <section id="statusCard" class="status">
-      <strong id="status">On schedule ✓</strong>
-      <span id="explain">No unresolved session condition currently requires escalation.</span>
-    </section>
-
+    <div class="top"><div class="brand">🛡️ SafeCircle</div><div class="pill" id="scopeBadge">Guardian Live · Token required</div></div>
+    <h1 id="title">Guardian session unavailable</h1>
+    <p class="sub" id="intro">This page only displays a Safety Session when opened with a valid, signed, unexpired Guardian token.</p>
+    <section id="statusCard" class="status danger"><strong id="status">No session loaded</strong><span id="explain">Open the signed link shared by the SafeCircle user.</span></section>
     <section class="grid">
-      <div class="card"><div class="k">Expected safe</div><div class="v" id="eta">10:05 PM</div></div>
-      <div class="card"><div class="k">Last check-in</div><div class="v" id="checkin">1 min ago</div></div>
-      <div class="card"><div class="k">Battery</div><div class="v" id="battery">72%</div></div>
-      <div class="card"><div class="k">Location privacy</div><div class="v" id="privacy">Escalation only</div></div>
+      <div class="card"><div class="k">Expected safe</div><div class="v" id="eta">—</div></div>
+      <div class="card"><div class="k">Last check-in</div><div class="v" id="checkin">—</div></div>
+      <div class="card"><div class="k">Battery</div><div class="v" id="battery">Private / unavailable</div></div>
+      <div class="card"><div class="k">Location privacy</div><div class="v" id="privacy">—</div></div>
     </section>
-
-    <section class="timeline">
+    <section class="timeline" id="timeline">
       <h2>Escalation plan</h2>
-      <div class="step"><span class="dot"></span><div><strong>0 min</strong><br/>Request a user check-in</div></div>
-      <div class="step"><span class="dot"></span><div><strong>+5 min</strong><br/>Primary Guardian acknowledgement</div></div>
-      <div class="step"><span class="dot"></span><div><strong>+10 min</strong><br/>Backup Guardian escalation</div></div>
-      <div class="step"><span class="dot"></span><div><strong>+15 min</strong><br/>Release pre-authorized Safety Capsule fields</div></div>
+      <div class="step" data-stage="0"><span class="dot"></span><div><strong>0 min</strong><br/>Request a user check-in</div></div>
+      <div class="step" data-stage="5"><span class="dot"></span><div><strong>+5 min</strong><br/>Primary Guardian acknowledgement</div></div>
+      <div class="step" data-stage="10"><span class="dot"></span><div><strong>+10 min</strong><br/>Backup Guardian escalation</div></div>
+      <div class="step" data-stage="15"><span class="dot"></span><div><strong>+15 min</strong><br/>Release pre-authorized Safety Capsule fields</div></div>
     </section>
-
-    <div class="actions">
-      <button class="primary" onclick="requestCheckIn()">Request check-in</button>
-      <button class="secondary" onclick="callUser()">Call</button>
-    </div>
-
-    <div class="privacy">
-      <strong>Privacy-first.</strong> SafeCircle does not require permanent location access for Guardians. Precise information can remain locked until the user's configured escalation threshold is reached.
-    </div>
+    <div class="actions" id="actions"><button class="primary" onclick="requestCheckIn()" disabled>Request check-in</button><button class="secondary" onclick="callUser()" disabled>Call</button></div>
+    <div class="privacy"><strong>Privacy-first.</strong> Guardian access is temporary, token scoped, and read-only. Missing data stays hidden; this page never substitutes demo values for production session data.</div>
   </main>
-
-  <script>
-    const q = new URLSearchParams(location.search);
-    const get = (k, fallback) => q.get(k) || fallback;
-
-    function formatTime(ms) {
-      if (!ms) return '—';
-      return new Date(Number(ms)).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-    }
-
-    function formatAgo(ms) {
-      if (!ms) return '—';
-      const minutes = Math.max(0, Math.round((Date.now() - Number(ms)) / 60000));
-      return minutes === 0 ? 'just now' : minutes + ' min ago';
-    }
-
-    function render(data) {
-      const mode = String(data.mode || 'Walk Home').replaceAll('_',' ');
-      const status = String(data.state || 'NORMAL').replaceAll('_',' ');
-      document.getElementById('title').textContent = mode + ' session';
-      document.getElementById('status').textContent = status === 'NORMAL' ? 'On schedule ✓' : status;
-      document.getElementById('battery').textContent =
-        data.battery_percent == null ? 'Private' : data.battery_percent + '%';
-      document.getElementById('eta').textContent =
-        data.expected_end_at ? formatTime(data.expected_end_at) : get('eta', '10:05 PM');
-      document.getElementById('checkin').textContent =
-        data.last_check_in_at ? formatAgo(data.last_check_in_at) : get('checkin', '1 min ago');
-      document.getElementById('privacy').textContent =
-        String(data.privacy_mode || get('privacy', 'Escalation only')).replaceAll('_',' ');
-
-      const card = document.getElementById('statusCard');
-      card.classList.toggle('danger', ['CONCERN','ESCALATED'].includes(status));
-      document.getElementById('explain').textContent =
-        ['CONCERN','ESCALATED'].includes(status)
-          ? 'A configured Safety Session condition changed. Review the session and follow the user-defined escalation plan.'
-          : 'No unresolved session condition currently requires escalation.';
-    }
-
-    async function load() {
-      const token = q.get('token');
-      if (!token) {
-        render({
-          mode: get('mode','Walk Home'),
-          state: get('state','NORMAL'),
-          battery_percent: get('battery','72'),
-          privacy_mode: get('privacy','PRECISE_ON_ESCALATION')
-        });
-        return;
-      }
-
-      try {
-        const api = get('api', location.origin).replace(/\/$/, '');
-        const response = await fetch(api + '/v1/public/guardian/' + encodeURIComponent(token), {
-          headers: {'Accept':'application/json'}
-        });
-        if (!response.ok) throw new Error('Guardian link unavailable');
-        render(await response.json());
-      } catch (error) {
-        document.getElementById('status').textContent = 'Guardian link unavailable';
-        document.getElementById('explain').textContent =
-          'This link may be expired, revoked, or the SafeCircle backend may be unavailable.';
-        document.getElementById('statusCard').classList.add('danger');
-      }
-    }
-
-    function requestCheckIn(){
-      alert('Guardian check-in request UI is ready; connect your delivery provider for production notifications.');
-    }
-    function callUser(){
-      alert('Open the trusted contact call action on a connected deployment.');
-    }
-
-    load();
-  </script>
+<script>
+const q=new URLSearchParams(location.search);let loaded=null;
+const formatTime=ms=>ms?new Date(Number(ms)).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'—';
+const formatAgo=ms=>{if(!ms)return'—';const s=Math.max(0,Math.floor((Date.now()-Number(ms))/1000));if(s<60)return s+' sec ago';const m=Math.floor(s/60);return m<60?m+' min ago':Math.floor(m/60)+' hr ago'};
+function setUnavailable(message){document.getElementById('title').textContent='Guardian session unavailable';document.getElementById('status').textContent='Link unavailable';document.getElementById('explain').textContent=message;document.getElementById('statusCard').className='status danger';document.querySelectorAll('#actions button').forEach(b=>b.disabled=true)}
+function render(data){loaded=data;const raw=String(data.state||'NORMAL').toUpperCase();const resolved=!!data.resolved||raw==='RESOLVED';let effective=raw;const stage=data.escalation_stage_minutes;if(!resolved&&stage!=null){if(stage>=15)effective='ESCALATED';else if(stage>=5)effective='CONCERN';else effective='CHECK_IN'}
+const mode=String(data.mode||'Safety').replaceAll('_',' ');document.getElementById('title').textContent=mode+' session';document.getElementById('scopeBadge').textContent='Guardian Live · Session scoped';document.getElementById('eta').textContent=formatTime(data.expected_end_at);document.getElementById('checkin').textContent=formatAgo(data.last_check_in_at);document.getElementById('battery').textContent=data.battery_percent==null?'Private / unavailable':data.battery_percent+'%';document.getElementById('privacy').textContent=String(data.privacy_mode||'STATUS_ONLY').replaceAll('_',' ');
+const card=document.getElementById('statusCard');card.className='status '+(resolved?'resolved':(['CONCERN','ESCALATED'].includes(effective)?'danger':''));document.getElementById('status').textContent=resolved?'Resolved · monitoring ended':effective==='NORMAL'?'On schedule ✓':effective;document.getElementById('explain').textContent=resolved?'This session is read-only. Temporary Guardian monitoring has ended.':effective==='NORMAL'?'No unresolved session condition currently requires escalation.':'A configured session threshold changed. Follow the user-defined escalation plan.';
+document.querySelectorAll('.step').forEach(el=>el.querySelector('.dot').classList.toggle('active',stage!=null&&Number(el.dataset.stage)===Number(stage)));document.querySelectorAll('#actions button').forEach(b=>b.disabled=resolved);}
+async function load(){const token=q.get('token');if(!token){setUnavailable('No Guardian token was supplied. SafeCircle intentionally does not display fallback session data.');return}try{const api=(q.get('api')||location.origin).replace(/\/$/,'');const r=await fetch(api+'/v1/public/guardian/'+encodeURIComponent(token),{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);render(await r.json())}catch(e){setUnavailable('This Guardian link may be expired, revoked, invalid, or the backend may be unavailable.')}}
+function requestCheckIn(){if(!loaded||loaded.resolved)return;alert('Guardian acknowledgement/request actions require the configured delivery provider. No fake delivery result is shown here.')}function callUser(){if(!loaded||loaded.resolved)return;alert('Use the trusted contact details provided by the SafeCircle user. This web page does not invent a phone number.')}
+load();
+</script>
 </body>
 </html>
