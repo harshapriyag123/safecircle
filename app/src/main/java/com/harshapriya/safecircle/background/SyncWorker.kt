@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.harshapriya.safecircle.auth.AccountRepository
+import com.harshapriya.safecircle.auth.AuthRepository
 import com.harshapriya.safecircle.data.SafetyRepository
 import com.harshapriya.safecircle.domain.SafetyEngine
 import com.harshapriya.safecircle.platform.LocationProvider
@@ -24,9 +25,11 @@ class SyncWorker(
 
     override suspend fun doWork(): Result {
         return runCatching {
+            val authToken = AuthRepository(applicationContext).state()?.accessToken
+            val token = authToken ?: NetworkConfig.demoToken
             val gateway: SafeCircleGateway =
-                if (NetworkConfig.isConfigured) {
-                    HttpSafeCircleGateway(NetworkConfig.baseUrl, NetworkConfig.demoToken)
+                if (NetworkConfig.hasBackend && token.isNotBlank()) {
+                    HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
                 } else {
                     LocalDemoGateway()
                 }
@@ -67,7 +70,7 @@ class SyncWorker(
 
             Result.success()
         }.getOrElse {
-            if (NetworkConfig.isConfigured) Result.retry() else Result.success()
+            if (NetworkConfig.hasBackend) Result.retry() else Result.success()
         }
     }
 }
