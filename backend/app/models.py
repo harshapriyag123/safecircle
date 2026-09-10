@@ -59,3 +59,13 @@ class ClientEventBatch(BaseModel):
 
 class RevenueCatWebhookEnvelope(BaseModel):
     event: dict
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+    password: str = Field(min_length=10, max_length=256)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+    password: str = Field(min_length=10, max_length=256)
