@@ -58,7 +58,7 @@ class SyncWorker(
                         privacyMode = privacy.locationMode.name,
                         resolved = session.resolved,
                         capsuleJson = SafetyCapsuleStore(applicationContext).get(session.id),
-                        resolvedAt = null
+                        resolvedAt = session.resolvedAt
                     )
                 )
             }
