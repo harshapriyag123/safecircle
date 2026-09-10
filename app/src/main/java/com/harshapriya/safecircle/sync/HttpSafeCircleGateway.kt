@@ -36,6 +36,28 @@ class HttpSafeCircleGateway(
         return true
     }
 
+    override suspend fun createGuardianInvite(
+        sessionId: String,
+        ownerId: String,
+        role: String,
+        ttlMinutes: Int
+    ): GuardianInviteLink {
+        val response = post(
+            "/v1/guardian-invites",
+            JSONObject().apply {
+                put("session_id", sessionId)
+                put("owner_id", ownerId)
+                put("role", role)
+                put("ttl_minutes", ttlMinutes)
+            }
+        )
+        return GuardianInviteLink(
+            inviteId = response.getString("invite_id"),
+            url = response.getString("guardian_url"),
+            expiresAt = response.getLong("expires_at")
+        )
+    }
+
     override suspend fun upload(events: List<QueuedEvent>): List<String> {
         if (events.isEmpty()) return emptyList()
 
