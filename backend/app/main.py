@@ -4,9 +4,11 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any
+from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from . import db
 from .models import (
@@ -25,6 +27,7 @@ from .security import (
 )
 
 ESCALATION_STAGES = (0, 5, 10, 15)
+PUBLIC_BASE_URL = os.getenv("SAFECIRCLE_PUBLIC_BASE_URL", "http://localhost:8080").rstrip("/")
 
 
 def now_ms() -> int:
@@ -178,6 +181,14 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+guardian_candidates = [
+    Path(__file__).resolve().parent.parent / "web" / "guardian",
+    Path(__file__).resolve().parent.parent.parent / "web" / "guardian",
+]
+guardian_static = next((path for path in guardian_candidates if path.exists()), None)
+if guardian_static is not None:
+    app.mount("/guardian", StaticFiles(directory=guardian_static, html=True), name="guardian")
 
 
 @app.get("/health")
@@ -336,7 +347,7 @@ def create_guardian_invite(
         "invite_id": invite_id,
         "guardian_token": token,
         "expires_at": expires_at,
-        "guardian_url": "/guardian/?token=" + token,
+        "guardian_url": PUBLIC_BASE_URL + "/guardian/?token=" + token,
     }
 
 
