@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.harshapriya.safecircle.MainActivity
@@ -38,7 +39,9 @@ class AutomationsFragment : Fragment() {
         prefs = SafetyPreferencesRepository(requireContext())
 
         SubscriptionManager.refresh()
-        root.findViewById<MaterialButton>(R.id.addAutomationButton).setOnClickListener { requirePro { addRule() } }
+        root.findViewById<MaterialButton>(R.id.addAutomationButton).setOnClickListener {
+            requirePro { findNavController().navigate(R.id.action_navigation_automations_to_builder) }
+        }
         root.findViewById<MaterialButton>(R.id.scheduleCommuteButton).setOnClickListener { requirePro { scheduleCommute() } }
         root.findViewById<MaterialButton>(R.id.configureSafePhraseButton).setOnClickListener { requirePro { configureSafePhrase() } }
         root.findViewById<MaterialButton>(R.id.testSafePhraseButton).setOnClickListener { testSafePhrase() }
