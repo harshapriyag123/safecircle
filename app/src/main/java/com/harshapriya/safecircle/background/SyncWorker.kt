@@ -15,6 +15,7 @@ import com.harshapriya.safecircle.sync.NetworkConfig
 import com.harshapriya.safecircle.sync.SafeCircleGateway
 import com.harshapriya.safecircle.sync.SessionSyncPayload
 import com.harshapriya.safecircle.sync.SyncCoordinator
+import com.harshapriya.safecircle.security.SafetyCapsuleStore
 
 class SyncWorker(
     appContext: Context,
@@ -53,6 +54,7 @@ class SyncWorker(
                         locationAccuracy = location?.accuracyMeters,
                         privacyMode = privacy.locationMode.name,
                         resolved = session.resolved,
+                        capsuleJson = SafetyCapsuleStore(applicationContext).get(session.id),
                         resolvedAt = null
                     )
                 )
