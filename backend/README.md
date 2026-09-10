@@ -27,6 +27,22 @@ cp .env.example .env
 uvicorn app.main:app --reload --port 8080
 ```
 
+## Run with Docker
+
+Build from the **repository root** so the Guardian web portal can be packaged with the API:
+
+```bash
+docker build -f backend/Dockerfile -t safecircle-api .
+docker run --rm -p 8080:8080 \
+  -e SAFECIRCLE_API_SECRET=change-me \
+  -e GUARDIAN_SIGNING_SECRET=change-me-too \
+  -e REVENUECAT_WEBHOOK_SECRET=webhook-secret \
+  -e SAFECIRCLE_PUBLIC_BASE_URL=http://localhost:8080 \
+  safecircle-api
+```
+
+The Guardian web experience is then served from `/guardian/`.
+
 The API documentation is then available at `/docs`.
 
 ## Authentication
