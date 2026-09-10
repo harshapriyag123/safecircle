@@ -460,47 +460,110 @@ The final packaging may evolve during product validation.
 
 # 🏗️ Architecture
 
-```text
-┌───────────────────────────────────────────────┐
-│                  SafeCircle                    │
-├───────────────────────────────────────────────┤
-│                  UI Layer                      │
-│                                               │
-│ HomeFragment   CircleFragment   ProfileFragment│
-│      │               │                │        │
-├──────┼───────────────┼────────────────┼────────┤
-│                 State Layer                    │
-│                                               │
-│              SafetyViewModel                   │
-│                     │                          │
-├─────────────────────┼──────────────────────────┤
-│                Domain Layer                    │
-│                                               │
-│ SafetyEngine                                │
-│ EscalationEngine                            │
-│ SafePhraseEngine                            │
-│ SafetyAutomation                            │
-│ SafetyCapsuleFactory                        │
-│                     │                          │
-├─────────────────────┼──────────────────────────┤
-│                 Data Layer                     │
-│                                               │
-│ SafetyRepository ── local session persistence │
-│                     │                          │
-├─────────────────────┼──────────────────────────┤
-│              Monetization Layer                │
-│                                               │
-│ SubscriptionManager                           │
-│        │                                      │
-│        └──────── RevenueCat                    │
-│                  ├─ Paywall                    │
-│                  ├─ CustomerInfo               │
-│                  ├─ Restore                    │
-│                  └─ Customer Center            │
-└───────────────────────────────────────────────┘
+SafeCircle now uses a layered architecture that separates **safety decisions**, **device signals**, **privacy**, **reliability**, **Guardian delivery**, and **monetization**.
+
+```mermaid
+flowchart TB
+    subgraph APP["📱 SafeCircle Android"]
+      UI["Experience Layer
+Safety Sessions • My Circle • SafeCircle+"]
+      STATE["State
+SafetyViewModel"]
+      DOMAIN["Safety Intelligence
+SafetyEngine • EscalationEngine • SafePhraseEngine"]
+      DATA["Repositories
+Session • Automation • Family"]
+      DEVICE["Device Signals
+Battery • Location • Notifications"]
+      BG["Background Reliability
+WorkManager Scheduler"]
+      SEC["Privacy & Security
+Keystore AES-GCM • Safety Capsule"]
+      REL["Reliability
+Audit • Queue • Rate Limit • Receipts"]
+      RC["RevenueCat
+safecircle_pro • Paywall • Customer Center"]
+    end
+
+    subgraph CLOUD["☁️ Cloud Integration Boundary"]
+      GW["SafeCircleGateway"]
+      AUTH["Authenticated Identity"]
+      SYNC["Session Sync"]
+      JOBS["Idempotent Escalation Jobs"]
+      PUSH["Push / SMS Provider"]
+    end
+
+    subgraph GUARDIAN["🛡️ Guardian Surfaces"]
+      WEB["Guardian Web View"]
+      MOBILE["Guardian Mobile / Push"]
+    end
+
+    UI --> STATE
+    STATE --> DOMAIN
+    STATE --> DATA
+    DATA --> DEVICE
+    DATA --> BG
+    DATA --> SEC
+    DOMAIN --> REL
+    UI --> RC
+
+    REL --> GW
+    DATA --> GW
+    GW --> AUTH
+    GW --> SYNC
+    GW --> JOBS
+    JOBS --> PUSH
+    PUSH --> MOBILE
+    SYNC --> WEB
 ```
 
-For deeper technical notes, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+### Safety Session lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> NORMAL: Session starts
+    NORMAL --> ATTENTION: Low battery / signal change
+    NORMAL --> CHECK_IN: ETA threshold
+    ATTENTION --> CHECK_IN: Confirmation required
+    CHECK_IN --> NORMAL: User responds
+    CHECK_IN --> CONCERN: Check-in missed
+    CONCERN --> ESCALATED: Escalation threshold
+    ESCALATED --> RESOLVED: User/Guardian resolves
+    NORMAL --> RESOLVED: I'm Safe
+    RESOLVED --> [*]
+```
+
+### Privacy-first escalation
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant A as SafeCircle
+    participant W as WorkManager
+    participant G1 as Primary Guardian
+    participant G2 as Backup Guardian
+    participant C as Safety Capsule
+
+    U->>A: Start Safety Session
+    A->>W: Schedule checkpoints
+    W-->>A: ETA reached
+    A-->>U: Gentle check-in
+
+    alt User is safe
+        U->>A: Check in / extend ETA
+        A->>W: Cancel or reschedule
+    else No response
+        W-->>A: +5 min
+        A-->>G1: Primary escalation
+        W-->>A: +10 min
+        A-->>G2: Backup escalation
+        W-->>A: +15 min
+        A->>C: Release authorized fields
+        C-->>G1: Time-limited access
+    end
+```
+
+See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full component, state-machine, offline-reliability, privacy, and RevenueCat diagrams.
 
 ---
 
@@ -759,35 +822,41 @@ SafeCircle keeps the user in control and treats automation as orchestration, not
 
 ## Phase 2 — Connected Safety
 
-- [ ] Authentication
-- [ ] Verified Guardian invitations
-- [ ] Push notifications
-- [ ] Live Guardian session view
-- [ ] Background session scheduler
-- [ ] Real battery integration
-- [ ] User-consented location integration
-- [ ] Editable ETA
-- [ ] Offline event queue + reconciliation
+- [x] Stable local account identity + cloud identity contract
+- [x] Expiring Guardian invite/share flow
+- [x] Local safety notifications
+- [x] Guardian web prototype
+- [x] Background escalation scheduler with WorkManager
+- [x] Real Android battery integration
+- [x] User-consented Android location adapter
+- [x] Editable ETA API + job rescheduling
+- [x] Offline event queue
+- [ ] Connect production push/SMS provider
+- [ ] Connect authenticated multi-device backend sync
 
 ## Phase 3 — Privacy & Reliability
 
-- [ ] Encrypted Safety Capsule storage
-- [ ] Automatic retention/deletion
-- [ ] Audit trail
-- [ ] Delivery receipts
-- [ ] Idempotent escalation jobs
-- [ ] Abuse prevention and rate limiting
-- [ ] Accessibility testing
-- [ ] Threat modeling
+- [x] Android Keystore + AES-GCM Safety Capsule encryption
+- [x] Capsule expiry + purge support
+- [x] Local audit trail
+- [x] Delivery receipt model
+- [x] Idempotent escalation-stage keys
+- [x] Rate limiting
+- [x] Offline retry queue
+- [x] Threat model
+- [ ] Production accessibility audit
+- [ ] External security review
 
 ## Phase 4 — SafeCircle Family
 
-- [ ] Family subscriptions
-- [ ] Multiple Circles
-- [ ] Recurring commute sessions
-- [ ] Guardian web experience
-- [ ] Cross-platform Android/iOS accounts
-- [ ] Advanced automation builder
+- [x] RevenueCat entitlement architecture ready for Family tier
+- [x] Local Family Circle repository
+- [x] Recurring commute scheduler
+- [x] Guardian web experience prototype
+- [x] Cross-platform account/sync gateway contract
+- [x] Advanced automation rule repository
+- [ ] Production Family product IDs/offering
+- [ ] Authenticated Android/iOS cloud account sync
 
 ---
 
