@@ -11,6 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.data.SafetyRepository
+import com.harshapriya.safecircle.model.SessionMode
+import com.harshapriya.safecircle.reliability.AuditEvent
+import com.harshapriya.safecircle.reliability.AuditLog
 
 class SafePhraseFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
@@ -19,6 +23,8 @@ class SafePhraseFragment : Fragment() {
         val phrase = root.findViewById<EditText>(R.id.safePhraseInput)
         val test = root.findViewById<EditText>(R.id.safePhraseTestInput)
         val status = root.findViewById<TextView>(R.id.safePhraseStatus)
+        val safety = SafetyRepository(requireContext())
+        val audit = AuditLog(requireContext())
         phrase.setText(prefs.getString("phrase", "blue notebook"))
 
         root.findViewById<MaterialButton>(R.id.saveSafePhraseButton).setOnClickListener {
@@ -28,19 +34,46 @@ class SafePhraseFragment : Fragment() {
             } else {
                 prefs.edit().putString("phrase", value).apply()
                 status.text = "SafePhrase saved on this device. It is never displayed to Guardians."
+                audit.append(AuditEvent(System.currentTimeMillis(), "SAFEPHRASE_CONFIGURED", safety.currentSession()?.id, "local phrase updated"))
                 Toast.makeText(requireContext(), "SafePhrase saved", Toast.LENGTH_SHORT).show()
             }
         }
 
         root.findViewById<MaterialButton>(R.id.testSafePhraseButton).setOnClickListener {
-            val saved = prefs.getString("phrase", "blue notebook") ?: "blue notebook"
-            val matched = test.text.toString().trim().equals(saved, ignoreCase = true)
+            val matched = phraseMatches(prefs, test.text.toString())
             status.text = if (matched) {
-                "MATCHED ✓ Trusted-circle escalation would activate. This test does not contact anyone."
+                "MATCHED ✓ Private test passed. No Guardian was contacted and no session state changed."
             } else {
                 "No match. No escalation action was triggered."
             }
         }
+
+        root.findViewById<MaterialButton>(R.id.activateSafePhraseButton).setOnClickListener {
+            if (!phraseMatches(prefs, test.text.toString())) {
+                status.text = "Phrase did not match. Nothing was activated."
+                return@setOnClickListener
+            }
+
+            var session = safety.currentSession()
+            if (session == null || session.resolved) {
+                session = safety.startSession(
+                    mode = SessionMode.STAY_WITH_ME,
+                    durationMinutes = 30,
+                    destinationLabel = "SafePhrase protection",
+                    originLabel = "Discreet activation"
+                )
+            }
+            safety.simulateConcern()
+            audit.append(AuditEvent(System.currentTimeMillis(), "SAFEPHRASE_ACTIVATED", session.id, "trusted-circle workflow activated"))
+            status.text = "ACTIVATED ✓ SafeCircle moved the active Safety Session into CONCERN and queued normal sync/escalation handling."
+            Toast.makeText(requireContext(), "SafePhrase activated", Toast.LENGTH_LONG).show()
+        }
+
         return root
+    }
+
+    private fun phraseMatches(prefs: android.content.SharedPreferences, entered: String): Boolean {
+        val saved = prefs.getString("phrase", "blue notebook") ?: "blue notebook"
+        return entered.trim().equals(saved.trim(), ignoreCase = true)
     }
 }
