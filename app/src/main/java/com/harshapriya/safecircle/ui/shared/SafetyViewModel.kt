@@ -22,8 +22,10 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     fun checkIn() = set(repo.checkIn())
     fun markSafe() = set(repo.markSafe())
     fun simulateConcern() = set(repo.simulateConcern())
+    fun extendEta(minutes: Int) = set(repo.updateEta(minutes))
     fun refresh() = set(repo.currentSession())
     fun guardians() = repo.guardians()
+    fun lastLocationLabel() = repo.lastLocationLabel()
 
     private fun set(value: SafetySession?) {
         _session.value = value
