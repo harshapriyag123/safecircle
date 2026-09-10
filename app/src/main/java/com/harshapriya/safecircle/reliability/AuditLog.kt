@@ -15,7 +15,8 @@ class AuditLog(context: Context) {
     fun append(event: AuditEvent) {
         val current = prefs.getStringSet("events", emptySet())?.toMutableSet() ?: mutableSetOf()
         current += "${event.timestamp}|${event.type}|${event.sessionId.orEmpty()}|${event.details.replace("|", "/")}"
-        prefs.edit().putStringSet("events", current.takeLast(250).toSet()).apply()
+        val bounded = current.toList().takeLast(250).toSet()
+        prefs.edit().putStringSet("events", bounded).apply()
     }
 
     fun recent(limit: Int = 50): List<AuditEvent> =
