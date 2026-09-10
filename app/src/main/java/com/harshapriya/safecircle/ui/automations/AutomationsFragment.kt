@@ -13,7 +13,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.automation.AutomationRepository
 import com.harshapriya.safecircle.automation.AutomationRule
 import com.harshapriya.safecircle.background.RecurringCommuteScheduler
@@ -35,13 +37,22 @@ class AutomationsFragment : Fragment() {
         repo = AutomationRepository(requireContext())
         prefs = SafetyPreferencesRepository(requireContext())
 
-        root.findViewById<MaterialButton>(R.id.addAutomationButton).setOnClickListener { addRule() }
-        root.findViewById<MaterialButton>(R.id.scheduleCommuteButton).setOnClickListener { scheduleCommute() }
-        root.findViewById<MaterialButton>(R.id.configureSafePhraseButton).setOnClickListener { configureSafePhrase() }
+        SubscriptionManager.refresh()
+        root.findViewById<MaterialButton>(R.id.addAutomationButton).setOnClickListener { requirePro { addRule() } }
+        root.findViewById<MaterialButton>(R.id.scheduleCommuteButton).setOnClickListener { requirePro { scheduleCommute() } }
+        root.findViewById<MaterialButton>(R.id.configureSafePhraseButton).setOnClickListener { requirePro { configureSafePhrase() } }
         root.findViewById<MaterialButton>(R.id.testSafePhraseButton).setOnClickListener { testSafePhrase() }
 
         render()
         return root
+    }
+
+    private fun requirePro(action: () -> Unit) {
+        if (SubscriptionManager.isPro.value == true) {
+            action()
+        } else {
+            (activity as? MainActivity)?.showProPaywall()
+        }
     }
 
     private fun render() {
