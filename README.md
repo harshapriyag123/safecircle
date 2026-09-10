@@ -458,6 +458,44 @@ The final packaging may evolve during product validation.
 
 ---
 
+# 📱 Product Surfaces
+
+SafeCircle now exposes the roadmap as real product screens rather than leaving features only in architecture notes.
+
+| Screen | What it demonstrates | Phase |
+|---|---|---|
+| **Today** | Start Safety Sessions, live readiness score, countdown, real battery signal, session-scoped location state, check-in, I'm Safe, ETA extension, escalation preview | 1 + 2 |
+| **Automate** | IF → THEN safety rules, custom automation creation, recurring commute reminders, configurable SafePhrase, local SafePhrase test | 2 + 4 |
+| **Circle** | Guardian Live summary, Guardian invite sharing, Primary/Backup Guardian model, Family Circle creation and member management | 2 + 4 |
+| **Vault** | Android Keystore/AES-GCM capsule storage, privacy mode, encrypted capsule creation, expiry purge, audit trail, session history, Safety Receipt sharing | 3 |
+| **Pro** | RevenueCat `safecircle_pro` status, hosted Paywall, Customer Center, restore purchases, stable account identity, editable Emergency Profile | 1 + 4 |
+
+### Core product loop
+
+```mermaid
+flowchart LR
+    START["Start Safety Session"] --> LIVE["Live session dashboard"]
+    LIVE --> SAFE{"User checks in?"}
+    SAFE -- Yes --> RECEIPT["Resolve + Safety Receipt"]
+    SAFE -- No --> RULES["Safety Automations"]
+    RULES --> CIRCLE["Guardian Circle"]
+    CIRCLE --> VAULT["Authorized Safety Capsule"]
+    VAULT --> RESOLVE["Resolved"]
+    PRO["RevenueCat safecircle_pro"] --> RULES
+    PRO --> CIRCLE
+    PRO --> VAULT
+```
+
+### What is intentionally free
+
+Basic Safety Sessions, check-ins, one Guardian, "I'm Safe", and essential session visibility are not designed to disappear because a subscription expires.
+
+### What SafeCircle+ unlocks
+
+Advanced automations, recurring routines, Family Circles, configurable SafePhrase workflows, and advanced Vault/privacy controls use the RevenueCat entitlement boundary.
+
+---
+
 # 🏗️ Architecture
 
 SafeCircle now uses a layered architecture that separates **safety decisions**, **device signals**, **privacy**, **reliability**, **Guardian delivery**, and **monetization**.
