@@ -4,6 +4,8 @@ import com.harshapriya.safecircle.reliability.DeliveryReceipt
 import com.harshapriya.safecircle.reliability.QueuedEvent
 
 class LocalDemoGateway : SafeCircleGateway {
+    override suspend fun upsertSession(payload: SessionSyncPayload): Boolean = true
+
     override suspend fun upload(events: List<QueuedEvent>): List<String> = events.map { it.id }
 
     override suspend fun sendGuardianAlert(
