@@ -10,7 +10,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.button.MaterialButton
+import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.history.SafetyHistoryRepository
 import com.harshapriya.safecircle.history.SafetyReceipt
 import com.harshapriya.safecircle.model.SafetyCapsuleFactory
@@ -34,7 +36,8 @@ class VaultFragment : Fragment() {
         vm = ViewModelProvider(requireActivity())[SafetyViewModel::class.java]
 
         root.findViewById<MaterialButton>(R.id.createCapsuleButton).setOnClickListener { createCapsule() }
-        root.findViewById<MaterialButton>(R.id.privacyModeButton).setOnClickListener { choosePrivacy() }
+        SubscriptionManager.refresh()
+        root.findViewById<MaterialButton>(R.id.privacyModeButton).setOnClickListener { requirePro { choosePrivacy() } }
         root.findViewById<MaterialButton>(R.id.purgeCapsuleButton).setOnClickListener {
             store.purgeExpired()
             Toast.makeText(requireContext(), "Expired capsules purged", Toast.LENGTH_SHORT).show()
@@ -52,6 +55,14 @@ class VaultFragment : Fragment() {
         vm.session.observe(viewLifecycleOwner) { render() }
         render()
         return root
+    }
+
+    private fun requirePro(action: () -> Unit) {
+        if (SubscriptionManager.isPro.value == true) {
+            action()
+        } else {
+            (activity as? MainActivity)?.showProPaywall()
+        }
     }
 
     private fun createCapsule() {
