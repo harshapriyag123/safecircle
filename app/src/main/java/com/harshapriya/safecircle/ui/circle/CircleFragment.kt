@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -18,6 +19,7 @@ import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.family.FamilyCircleRepository
+import com.harshapriya.safecircle.guardian.GuardianInviteCoordinator
 import com.harshapriya.safecircle.guardian.GuardianInviteService
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
 import java.text.SimpleDateFormat
@@ -40,8 +42,15 @@ class CircleFragment : Fragment() {
 
         root.findViewById<MaterialButton>(R.id.addGuardianButton).setOnClickListener {
             val service = GuardianInviteService(requireContext())
-            val invite = service.create()
-            service.share(invite)
+            viewLifecycleOwner.lifecycleScope.launch {
+                runCatching {
+                    GuardianInviteCoordinator(requireContext()).createForActiveSession()
+                }.onSuccess { invite ->
+                    service.shareUrl(invite.url)
+                }.onFailure { error ->
+                    Toast.makeText(requireContext(), error.message ?: "Unable to create Guardian invite", Toast.LENGTH_LONG).show()
+                }
+            }
         }
 
         SubscriptionManager.refresh()
