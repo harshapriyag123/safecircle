@@ -2,6 +2,7 @@ package com.harshapriya.safecircle.data
 
 import android.content.Context
 import com.harshapriya.safecircle.background.SafetyScheduler
+import com.harshapriya.safecircle.history.SafetyHistoryRepository
 import com.harshapriya.safecircle.model.Guardian
 import com.harshapriya.safecircle.model.SafetySession
 import com.harshapriya.safecircle.model.SafetyState
@@ -18,6 +19,7 @@ class SafetyRepository(private val context: Context) {
     private val location = LocationProvider(context)
     private val scheduler = SafetyScheduler(context)
     private val audit = AuditLog(context)
+    private val history = SafetyHistoryRepository(context)
 
     fun startSession(mode: SessionMode): SafetySession {
         val now = System.currentTimeMillis()
@@ -32,6 +34,7 @@ class SafetyRepository(private val context: Context) {
         saveSession(session)
         scheduler.schedule(session.id, session.expectedEndAt)
         audit.append(AuditEvent(now, "SESSION_STARTED", session.id, "mode=${mode.name}"))
+        history.recordStarted(session.id, mode.name, now)
         location.lastKnown()?.let {
             prefs.edit()
                 .putString("last_location", "${it.latitude},${it.longitude}")
@@ -91,7 +94,9 @@ class SafetyRepository(private val context: Context) {
     )?.also {
         saveSession(it)
         scheduler.cancel(it.id)
-        audit.append(AuditEvent(System.currentTimeMillis(), "SESSION_RESOLVED", it.id, "user marked safe"))
+        val endedAt = System.currentTimeMillis()
+        audit.append(AuditEvent(endedAt, "SESSION_RESOLVED", it.id, "user marked safe"))
+        history.recordResolved(it.id, endedAt, "SAFE")
     }
 
     fun lastLocationLabel(): String? = prefs.getString("last_location", null)
