@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/navigation_home" android:icon="@drawable/ic_home" android:title="@string/title_home" />
+    <item android:id="@+id/navigation_automations" android:icon="@drawable/ic_automation" android:title="@string/title_automations" />
     <item android:id="@+id/navigation_circle" android:icon="@drawable/ic_circle" android:title="@string/title_circle" />
+    <item android:id="@+id/navigation_vault" android:icon="@drawable/ic_vault" android:title="@string/title_vault" />
     <item android:id="@+id/navigation_profile" android:icon="@drawable/ic_pro" android:title="@string/title_profile" />
 </menu>
