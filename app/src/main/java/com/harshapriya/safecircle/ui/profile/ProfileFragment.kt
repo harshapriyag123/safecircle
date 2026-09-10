@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.auth.AccountRepository
@@ -55,6 +56,9 @@ class ProfileFragment : Fragment() {
         }
         root.findViewById<Button>(R.id.editEmergencyProfileButton).setOnClickListener {
             editEmergencyProfile()
+        }
+        root.findViewById<Button>(R.id.systemHealthButton).setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_profile_to_diagnostics)
         }
 
         renderEmergencyProfile()
