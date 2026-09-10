@@ -4,7 +4,7 @@ struct SafeCircleAPI {
     var baseURL: URL {
         if let raw = UserDefaults.standard.string(forKey: "api_base_url"),
            let url = URL(string: raw) { return url }
-        return URL(string: "http://127.0.0.1:8080")!
+        return URL(string: "https://safecircle-production-5a32.up.railway.app")!
     }
 
     func register(email: String, password: String) async throws -> AuthState {
@@ -42,18 +42,18 @@ struct SafeCircleAPI {
     }
 
     func checkIn(_ sessionId: String, token: String) async throws {
-        try await post(path: "/v1/sessions/(sessionId)/check-in", body: [:], token: token)
+        try await post(path: "/v1/sessions/\(sessionId)/check-in", body: [:], token: token)
     }
 
     func resolve(_ sessionId: String, token: String) async throws {
-        try await post(path: "/v1/sessions/(sessionId)/resolve", body: [:], token: token)
+        try await post(path: "/v1/sessions/\(sessionId)/resolve", body: [:], token: token)
     }
 
     func createGuardianInvite(sessionId: String, ownerId: String, token: String) async throws -> GuardianInviteResponse {
         var request = URLRequest(url: baseURL.appending(path: "/v1/guardian-invites"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer (token)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "session_id": sessionId,
             "owner_id": ownerId,
@@ -69,7 +69,7 @@ struct SafeCircleAPI {
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer (token)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response, data: data)
