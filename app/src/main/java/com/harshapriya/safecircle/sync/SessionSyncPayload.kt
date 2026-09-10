@@ -15,5 +15,6 @@ data class SessionSyncPayload(
     val locationAccuracy: Float?,
     val privacyMode: String,
     val resolved: Boolean,
+    val capsuleJson: String? = null,
     val resolvedAt: Long? = null
 )
