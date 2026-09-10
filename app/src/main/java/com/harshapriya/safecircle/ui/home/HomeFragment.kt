@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.model.SessionMode
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
@@ -26,7 +27,9 @@ class HomeFragment : Fragment() {
         root = inflater.inflate(R.layout.fragment_home, container, false)
         vm = ViewModelProvider(requireActivity())[SafetyViewModel::class.java]
 
-        root.findViewById<Button>(R.id.startSessionButton).setOnClickListener { chooseMode() }
+        root.findViewById<Button>(R.id.startSessionButton).setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_home_to_session_setup)
+        }
         root.findViewById<Button>(R.id.checkInButton).setOnClickListener { vm.checkIn() }
         root.findViewById<Button>(R.id.safeButton).setOnClickListener { vm.markSafe() }
         root.findViewById<Button>(R.id.simulateButton).setOnClickListener { vm.simulateConcern() }
