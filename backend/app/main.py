@@ -20,6 +20,7 @@ from .models import (
     RegisterRequest,
     LoginRequest,
 )
+from .providers import deliver_escalation
 from .security import (
     require_bearer,
     sign_guardian_token,
@@ -142,16 +143,25 @@ async def escalation_loop(stop: asyncio.Event) -> None:
                 stage_minutes=stage,
             )
             if created and stage >= 5:
-                # Production deployments attach a push/SMS worker to these queued events.
-                db.append_event(
-                    session["id"],
-                    "GUARDIAN_DELIVERY_PENDING",
-                    {
-                        "stage_minutes": stage,
-                        "channel": "provider_adapter_required",
-                    },
-                    stage_minutes=stage,
-                )
+                results = await asyncio.to_thread(deliver_escalation, session, stage)
+                if not results:
+                    db.append_event(
+                        session["id"],
+                        "GUARDIAN_DELIVERY_PENDING",
+                        {"stage_minutes": stage, "channel": "provider_not_configured"},
+                        stage_minutes=stage,
+                    )
+                for index, result in enumerate(results):
+                    db.append_event(
+                        session["id"],
+                        "GUARDIAN_DELIVERY_" + result.channel.upper() + "_" + str(index),
+                        {
+                            "stage_minutes": stage,
+                            "accepted": result.accepted,
+                            "provider_message_id": result.provider_message_id,
+                            "error": result.error,
+                        },
+                    )
 
         try:
             await asyncio.wait_for(stop.wait(), timeout=15)
