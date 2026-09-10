@@ -12,6 +12,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.family.FamilyCircleRepository
+import com.harshapriya.safecircle.guardian.GuardianInviteService
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
 
 class CircleFragment : Fragment() {
@@ -19,23 +21,31 @@ class CircleFragment : Fragment() {
         val root = inflater.inflate(R.layout.fragment_circle, container, false)
         val vm = ViewModelProvider(requireActivity())[SafetyViewModel::class.java]
         val list = root.findViewById<LinearLayout>(R.id.guardianList)
+        val familyRepo = FamilyCircleRepository(requireContext())
 
         vm.guardians().forEach { guardian ->
             val card = MaterialCardView(requireContext()).apply {
                 radius = 24f
                 cardElevation = 0f
                 setContentPadding(28, 24, 28, 24)
-                val text = TextView(context).apply {
+                addView(TextView(context).apply {
                     text = "${if (guardian.primary) "★ " else ""}${guardian.name}\n${guardian.relation} · ${guardian.channel}"
                     textSize = 16f
-                }
-                addView(text)
+                })
             }
             list.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 18 })
         }
 
         root.findViewById<MaterialButton>(R.id.addGuardianButton).setOnClickListener {
-            Toast.makeText(requireContext(), "Hackathon demo: connect invite flow/backend next.", Toast.LENGTH_LONG).show()
+            val service = GuardianInviteService(requireContext())
+            val invite = service.create()
+            service.share(invite)
+        }
+
+        root.findViewById<MaterialButton>(R.id.createFamilyCircleButton).setOnClickListener {
+            val existing = familyRepo.circles().firstOrNull()
+            val circle = existing ?: familyRepo.create("My Family")
+            Toast.makeText(requireContext(), "Family Circle ready: ${circle.name}", Toast.LENGTH_SHORT).show()
         }
         return root
     }
