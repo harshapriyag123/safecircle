@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.auth.AccountRepository
+import com.harshapriya.safecircle.auth.AuthRepository
 import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.profile.EmergencyProfile
 import com.harshapriya.safecircle.profile.EmergencyProfileRepository
@@ -30,11 +31,14 @@ class ProfileFragment : Fragment() {
         val status = root.findViewById<TextView>(R.id.planStatus)
         val account = root.findViewById<TextView>(R.id.accountId)
 
-        val stableId = AccountRepository(requireContext()).stableUserId()
-        account.text = "Account ID: " + stableId.take(18) + "…"
+        renderAccount(account)
 
         SubscriptionManager.status.observe(viewLifecycleOwner) { status.text = it }
         SubscriptionManager.refresh { Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show() }
+
+        root.findViewById<Button>(R.id.accountAuthButton).setOnClickListener {
+            showAuthDialog(account)
+        }
 
         root.findViewById<Button>(R.id.upgradeButton).setOnClickListener {
             (activity as? MainActivity)?.showProPaywall()
@@ -63,6 +67,80 @@ class ProfileFragment : Fragment() {
 
         renderEmergencyProfile()
         return root
+    }
+
+    private fun renderAccount(account: TextView) {
+        val auth = AuthRepository(requireContext()).state()
+        val stableId = AccountRepository(requireContext()).stableUserId()
+        account.text = if (auth == null) {
+            "Local account ID: " + stableId.take(18) + "…"
+        } else {
+            "Signed in: " + auth.email + "\nUser ID: " + auth.userId.take(18) + "…"
+        }
+        root.findViewById<Button>(R.id.accountAuthButton).text =
+            if (auth == null) "Sign in / Create account" else "Sign out"
+    }
+
+    private fun showAuthDialog(account: TextView) {
+        val repo = AuthRepository(requireContext())
+        val current = repo.state()
+        if (current != null) {
+            repo.signOut()
+            renderAccount(account)
+            Toast.makeText(requireContext(), "Signed out", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val box = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 0, 48, 0)
+        }
+        val email = EditText(requireContext()).apply { hint = "Email"; inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS }
+        val password = EditText(requireContext()).apply {
+            hint = "Password (10+ characters)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        box.addView(email)
+        box.addView(password)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("SafeCircle account")
+            .setMessage("Sign in for multi-device session sync and Guardian links.")
+            .setView(box)
+            .setPositiveButton("Sign in", null)
+            .setNeutralButton("Create", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+            .also { dialog ->
+                dialog.setOnShowListener {
+                    fun runAuth(register: Boolean) {
+                        val e = email.text.toString().trim()
+                        val p = password.text.toString()
+                        if (e.isBlank() || p.length < 10) {
+                            Toast.makeText(requireContext(), "Enter a valid email and 10+ character password.", Toast.LENGTH_LONG).show()
+                            return
+                        }
+                        Thread {
+                            runCatching {
+                                if (register) repo.register(e, p) else repo.login(e, p)
+                            }.onSuccess {
+                                requireActivity().runOnUiThread {
+                                    renderAccount(account)
+                                    Toast.makeText(requireContext(), if (register) "Account created" else "Signed in", Toast.LENGTH_SHORT).show()
+                                    dialog.dismiss()
+                                }
+                            }.onFailure { error ->
+                                requireActivity().runOnUiThread {
+                                    Toast.makeText(requireContext(), error.message ?: "Authentication failed", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }.start()
+                    }
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { runAuth(false) }
+                    dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { runAuth(true) }
+                }
+                dialog.show()
+            }
     }
 
     private fun renderEmergencyProfile() {
