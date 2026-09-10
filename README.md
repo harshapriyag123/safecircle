@@ -906,8 +906,8 @@ SafeCircle keeps the user in control and treats automation as orchestration, not
 - [x] Editable ETA + background job rescheduling
 - [x] Offline event queue
 - [x] Server-side escalation stage engine and event queue
-- [ ] Plug in production push/SMS delivery provider
-- [ ] Replace demo shared API token with per-user production authentication
+- [x] Configurable production push webhook + Twilio SMS delivery adapters (credentials required at deploy time)
+- [x] Per-user registration/login, scrypt password hashing, signed access tokens, owner authorization, and Android auth UI
 
 ## Phase 3 — Privacy & Reliability
 
@@ -943,7 +943,7 @@ SafeCircle keeps the user in control and treats automation as orchestration, not
 - [x] First-run onboarding and product education
 - [x] FastAPI RevenueCat webhook mirror for server-side entitlement awareness
 - [ ] Create production Family product IDs/offering in store dashboards
-- [ ] Build native iOS client against the same API contract
+- [x] Native SwiftUI iOS reference client against the same API contract (XcodeGen project included)
 
 ---
 
