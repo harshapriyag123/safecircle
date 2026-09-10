@@ -90,8 +90,9 @@ class HomeFragment : Fragment() {
         } else {
             val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(session.expectedEndAt))
             root.findViewById<TextView>(R.id.activeSessionTitle).text = session.mode.label
+            val destination = session.destinationLabel?.let { " · " + it } ?: ""
             root.findViewById<TextView>(R.id.activeSessionMeta).text =
-                "Expected safe by " + time + " · " + session.batteryPercent + "% battery"
+                "Expected safe by " + time + " · " + session.batteryPercent + "% battery" + destination
             val location = vm.lastLocationLabel()
             root.findViewById<TextView>(R.id.locationStatus).text =
                 if (location == null) "Location: unavailable or not permitted"
