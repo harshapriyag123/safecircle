@@ -8,12 +8,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.auth.AccountRepository
+import com.harshapriya.safecircle.demo.DemoScenarioManager
 import com.harshapriya.safecircle.reliability.AuditLog
 import com.harshapriya.safecircle.reliability.OfflineEventQueue
 import com.revenuecat.purchases.Purchases
@@ -42,6 +44,23 @@ class DiagnosticsFragment : Fragment() {
                 "\nOffline events queued: " + queueCount +
                 "\nAudit events retained: " + auditCount +
                 "\nStable account ID: " + userId.take(20) + "…"
+
+        val demo = DemoScenarioManager(requireContext())
+
+        root.findViewById<MaterialButton>(R.id.seedDemoButton).setOnClickListener {
+            demo.seedJudgeDemo()
+            Toast.makeText(requireContext(), "Judge demo seeded. Open Today.", Toast.LENGTH_LONG).show()
+        }
+
+        root.findViewById<MaterialButton>(R.id.concernDemoButton).setOnClickListener {
+            demo.simulateConcern()
+            Toast.makeText(requireContext(), "Concern state simulated.", Toast.LENGTH_LONG).show()
+        }
+
+        root.findViewById<MaterialButton>(R.id.resolveDemoButton).setOnClickListener {
+            demo.resolveDemo()
+            Toast.makeText(requireContext(), "Demo resolved as safe.", Toast.LENGTH_LONG).show()
+        }
 
         root.findViewById<MaterialButton>(R.id.diagnosticsBackButton).setOnClickListener {
             findNavController().popBackStack()
