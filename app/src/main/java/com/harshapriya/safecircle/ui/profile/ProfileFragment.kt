@@ -10,12 +10,17 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.auth.AccountRepository
 import com.harshapriya.safecircle.billing.SubscriptionManager
 
 class ProfileFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         val root = inflater.inflate(R.layout.fragment_profile, container, false)
         val status = root.findViewById<TextView>(R.id.planStatus)
+        val account = root.findViewById<TextView>(R.id.accountId)
+
+        val stableId = AccountRepository(requireContext()).stableUserId()
+        account.text = "Account ID: " + stableId.take(18) + "…"
 
         SubscriptionManager.status.observe(viewLifecycleOwner) { status.text = it }
         SubscriptionManager.refresh { Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show() }
@@ -28,7 +33,13 @@ class ProfileFragment : Fragment() {
         }
         root.findViewById<Button>(R.id.restoreButton).setOnClickListener {
             SubscriptionManager.restore(
-                onDone = { active -> Toast.makeText(requireContext(), if (active) "SafeCircle+ restored" else "No active purchase found", Toast.LENGTH_LONG).show() },
+                onDone = { active ->
+                    Toast.makeText(
+                        requireContext(),
+                        if (active) "SafeCircle+ restored" else "No active purchase found",
+                        Toast.LENGTH_LONG
+                    ).show()
+                },
                 onError = { Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show() }
             )
         }
