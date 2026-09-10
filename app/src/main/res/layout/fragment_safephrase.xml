@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/surface_soft">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DISCREET ACTIVATION" android:textColor="@color/brand" android:textSize="12sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="SafePhrase" android:textColor="@color/ink" android:textSize="32sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Choose a private phrase that can activate the trusted-circle workflow without revealing why you need help." android:textColor="@color/muted" android:textSize="15sp" />
+
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="26dp" app:cardBackgroundColor="@color/brand_dark" app:cardElevation="0dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="22dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Private by default" android:textColor="@android:color/white" android:textSize="22sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="The phrase stays on this device. Guardians only see the resulting escalation state, not the secret phrase itself." android:textColor="#C9DED6" />
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Your SafePhrase" android:textColor="@color/ink" android:textStyle="bold" />
+    <EditText android:id="@+id/safePhraseInput" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="6dp" android:backgroundTint="@color/brand" android:hint="Example: blue notebook" android:inputType="text" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/saveSafePhraseButton" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="10dp" android:text="Save SafePhrase" />
+
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="22dp" app:cardElevation="0dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Test without contacting anyone" android:textColor="@color/ink" android:textSize="20sp" android:textStyle="bold" />
+        <EditText android:id="@+id/safePhraseTestInput" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="10dp" android:hint="Type your phrase" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/testSafePhraseButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:text="Run private test" />
+        <TextView android:id="@+id/safePhraseStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="No test has been run yet." android:textColor="@color/muted" />
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+  </LinearLayout>
+</ScrollView>
