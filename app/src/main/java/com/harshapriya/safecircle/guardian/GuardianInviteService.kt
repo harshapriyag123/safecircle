@@ -26,7 +26,12 @@ class GuardianInviteService(private val context: Context) {
 
     fun share(invite: GuardianInvite) {
         val deepLink = "https://safecircle.app/join?code=${invite.code}"
-        val text = "Join my SafeCircle as a trusted Guardian. Invite: $deepLink\nThis invite expires automatically."
+        shareUrl(deepLink)
+    }
+
+    fun shareUrl(url: String) {
+        val text = "Join my SafeCircle as a trusted Guardian.\n" + url +
+            "\n\nThis session-scoped invite expires automatically."
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "SafeCircle Guardian invite")
