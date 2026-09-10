@@ -4,87 +4,35 @@
     android:id="@+id/mobile_navigation"
     app:startDestination="@+id/navigation_home">
 
-    <fragment
-        android:id="@+id/navigation_home"
-        android:name="com.harshapriya.safecircle.ui.home.HomeFragment"
-        android:label="@string/title_home">
+    <fragment android:id="@+id/navigation_home" android:name="com.harshapriya.safecircle.ui.home.HomeFragment" android:label="@string/title_home">
         <action android:id="@+id/action_navigation_home_to_session_setup" app:destination="@id/navigation_session_setup" />
         <action android:id="@+id/action_navigation_home_to_toolkit" app:destination="@id/navigation_toolkit" />
     </fragment>
-
-    <fragment
-        android:id="@+id/navigation_session_setup"
-        android:name="com.harshapriya.safecircle.ui.session.SessionSetupFragment"
-        android:label="Start Safety Session" />
-
-    <fragment
-        android:id="@+id/navigation_automations"
-        android:name="com.harshapriya.safecircle.ui.automations.AutomationsFragment"
-        android:label="@string/title_automations">
+    <fragment android:id="@+id/navigation_session_setup" android:name="com.harshapriya.safecircle.ui.session.SessionSetupFragment" android:label="Start Safety Session" />
+    <fragment android:id="@+id/navigation_automations" android:name="com.harshapriya.safecircle.ui.automations.AutomationsFragment" android:label="@string/title_automations">
         <action android:id="@+id/action_navigation_automations_to_builder" app:destination="@id/navigation_automation_builder" />
     </fragment>
-
-    <fragment
-        android:id="@+id/navigation_automation_builder"
-        android:name="com.harshapriya.safecircle.ui.automations.AutomationBuilderFragment"
-        android:label="Build Automation" />
-
-    <fragment
-        android:id="@+id/navigation_circle"
-        android:name="com.harshapriya.safecircle.ui.circle.CircleFragment"
-        android:label="@string/title_circle">
+    <fragment android:id="@+id/navigation_automation_builder" android:name="com.harshapriya.safecircle.ui.automations.AutomationBuilderFragment" android:label="Build Automation" />
+    <fragment android:id="@+id/navigation_circle" android:name="com.harshapriya.safecircle.ui.circle.CircleFragment" android:label="@string/title_circle">
         <action android:id="@+id/action_navigation_circle_to_family" app:destination="@id/navigation_family_circle" />
     </fragment>
-
-    <fragment
-        android:id="@+id/navigation_family_circle"
-        android:name="com.harshapriya.safecircle.ui.family.FamilyCircleFragment"
-        android:label="Family Circles" />
-
-    <fragment
-        android:id="@+id/navigation_vault"
-        android:name="com.harshapriya.safecircle.ui.vault.VaultFragment"
-        android:label="@string/title_vault" />
-
-    <fragment
-        android:id="@+id/navigation_profile"
-        android:name="com.harshapriya.safecircle.ui.profile.ProfileFragment"
-        android:label="@string/title_profile">
+    <fragment android:id="@+id/navigation_family_circle" android:name="com.harshapriya.safecircle.ui.family.FamilyCircleFragment" android:label="Family Circles" />
+    <fragment android:id="@+id/navigation_vault" android:name="com.harshapriya.safecircle.ui.vault.VaultFragment" android:label="@string/title_vault" />
+    <fragment android:id="@+id/navigation_profile" android:name="com.harshapriya.safecircle.ui.profile.ProfileFragment" android:label="@string/title_profile">
         <action android:id="@+id/action_navigation_profile_to_diagnostics" app:destination="@id/navigation_diagnostics" />
     </fragment>
+    <fragment android:id="@+id/navigation_diagnostics" android:name="com.harshapriya.safecircle.ui.diagnostics.DiagnosticsFragment" android:label="System Health" />
 
-    <fragment
-        android:id="@+id/navigation_diagnostics"
-        android:name="com.harshapriya.safecircle.ui.diagnostics.DiagnosticsFragment"
-        android:label="System Health" />
-
-    <fragment
-        android:id="@+id/navigation_toolkit"
-        android:name="com.harshapriya.safecircle.ui.toolkit.SafetyToolkitFragment"
-        android:label="Safety Toolkit">
+    <fragment android:id="@+id/navigation_toolkit" android:name="com.harshapriya.safecircle.ui.toolkit.SafetyToolkitFragment" android:label="Safety Toolkit">
         <action android:id="@+id/action_navigation_toolkit_to_safephrase" app:destination="@id/navigation_safephrase" />
+        <action android:id="@+id/action_navigation_toolkit_to_fake_call" app:destination="@id/navigation_fake_call" />
         <action android:id="@+id/action_navigation_toolkit_to_nearby" app:destination="@id/navigation_nearby_support" />
         <action android:id="@+id/action_navigation_toolkit_to_receipt" app:destination="@id/navigation_safety_receipt" />
         <action android:id="@+id/action_navigation_toolkit_to_judge" app:destination="@id/navigation_judge_mode" />
     </fragment>
-
-    <fragment
-        android:id="@+id/navigation_safephrase"
-        android:name="com.harshapriya.safecircle.ui.toolkit.SafePhraseFragment"
-        android:label="SafePhrase" />
-
-    <fragment
-        android:id="@+id/navigation_nearby_support"
-        android:name="com.harshapriya.safecircle.ui.toolkit.NearbySupportFragment"
-        android:label="Nearby Support" />
-
-    <fragment
-        android:id="@+id/navigation_safety_receipt"
-        android:name="com.harshapriya.safecircle.ui.toolkit.SafetyReceiptFragment"
-        android:label="Safety Receipt" />
-
-    <fragment
-        android:id="@+id/navigation_judge_mode"
-        android:name="com.harshapriya.safecircle.ui.toolkit.JudgeModeFragment"
-        android:label="Judge Mode" />
+    <fragment android:id="@+id/navigation_safephrase" android:name="com.harshapriya.safecircle.ui.toolkit.SafePhraseFragment" android:label="SafePhrase" />
+    <fragment android:id="@+id/navigation_fake_call" android:name="com.harshapriya.safecircle.ui.toolkit.FakeCallFragment" android:label="Fake Call" />
+    <fragment android:id="@+id/navigation_nearby_support" android:name="com.harshapriya.safecircle.ui.toolkit.NearbySupportFragment" android:label="Nearby Support" />
+    <fragment android:id="@+id/navigation_safety_receipt" android:name="com.harshapriya.safecircle.ui.toolkit.SafetyReceiptFragment" android:label="Safety Receipt" />
+    <fragment android:id="@+id/navigation_judge_mode" android:name="com.harshapriya.safecircle.ui.toolkit.JudgeModeFragment" android:label="Judge Mode" />
 </navigation>
