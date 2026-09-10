@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_soft">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="System Health"
+            android:textColor="@color/ink"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="A hackathon-friendly health view for permissions, subscription setup, offline reliability, and local audit state." />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            app:cardCornerRadius="26dp"
+            app:cardElevation="0dp">
+
+            <TextView
+                android:id="@+id/diagnosticsSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="22dp"
+                android:lineSpacingExtra="8dp"
+                android:text="Loading system health…" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="16dp"
+            android:background="@android:color/white"
+            android:text="This screen reports app-side readiness only. Production Guardian delivery still requires authenticated backend and provider configuration." />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/diagnosticsBackButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Back" />
+    </LinearLayout>
+</ScrollView>
