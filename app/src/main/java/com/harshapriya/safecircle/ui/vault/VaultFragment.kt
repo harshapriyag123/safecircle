@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.button.MaterialButton
 import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.history.SafetyHistoryRepository
+import com.harshapriya.safecircle.history.SafetyReceipt
 import com.harshapriya.safecircle.model.SafetyCapsuleFactory
 import com.harshapriya.safecircle.privacy.LocationPrivacyMode
 import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
@@ -38,6 +39,14 @@ class VaultFragment : Fragment() {
             store.purgeExpired()
             Toast.makeText(requireContext(), "Expired capsules purged", Toast.LENGTH_SHORT).show()
             render()
+        }
+        root.findViewById<MaterialButton>(R.id.shareReceiptButton).setOnClickListener {
+            val latest = SafetyHistoryRepository(requireContext()).all().firstOrNull { item -> item.outcome != "ACTIVE" }
+            if (latest == null) {
+                Toast.makeText(requireContext(), "Complete a Safety Session first.", Toast.LENGTH_LONG).show()
+            } else {
+                SafetyReceipt.share(requireContext(), latest)
+            }
         }
 
         vm.session.observe(viewLifecycleOwner) { render() }
