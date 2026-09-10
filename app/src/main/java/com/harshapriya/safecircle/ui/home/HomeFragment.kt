@@ -33,9 +33,11 @@ class HomeFragment : Fragment() {
         }
         root.findViewById<Button>(R.id.checkInButton).setOnClickListener { vm.checkIn() }
         root.findViewById<Button>(R.id.safeButton).setOnClickListener { vm.markSafe() }
-        root.findViewById<Button>(R.id.simulateButton).setOnClickListener { vm.simulateConcern() }
         root.findViewById<Button>(R.id.extend5Button).setOnClickListener { vm.extendEta(5) }
         root.findViewById<Button>(R.id.extend15Button).setOnClickListener { vm.extendEta(15) }
+
+        // Concern injection is a Judge Mode feature, never a production safety action.
+        root.findViewById<Button>(R.id.simulateButton).visibility = View.GONE
 
         vm.session.observe(viewLifecycleOwner) { render() }
         vm.snapshot.observe(viewLifecycleOwner) { render() }
@@ -56,49 +58,79 @@ class HomeFragment : Fragment() {
         val session = vm.session.value
         val snapshot = vm.snapshot.value ?: return
 
-        root.findViewById<TextView>(R.id.readinessScore).text = snapshot.score.toString() + "/100"
-        root.findViewById<TextView>(R.id.safetyState).text = snapshot.state.name.replace('_', ' ')
-        root.findViewById<TextView>(R.id.signalSummary).text = snapshot.reasons.joinToString("  •  ")
-
+        val readiness = root.findViewById<TextView>(R.id.readinessScore)
+        val stateView = root.findViewById<TextView>(R.id.safetyState)
+        val summary = root.findViewById<TextView>(R.id.signalSummary)
         val extend5 = root.findViewById<Button>(R.id.extend5Button)
         val extend15 = root.findViewById<Button>(R.id.extend15Button)
         val checkIn = root.findViewById<Button>(R.id.checkInButton)
         val safe = root.findViewById<Button>(R.id.safeButton)
 
-        if (session == null || session.resolved) {
-            countdown?.cancel()
-            root.findViewById<TextView>(R.id.activeSessionTitle).text = "No active session"
-            root.findViewById<TextView>(R.id.activeSessionMeta).text =
-                "Start before a walk, rideshare, meetup, or time alone."
-            root.findViewById<TextView>(R.id.sessionCountdown).text = "--:-- remaining"
-            root.findViewById<TextView>(R.id.locationStatus).text =
-                "Location: shared only according to your session privacy settings"
-            extend5.isEnabled = false
-            extend15.isEnabled = false
-            checkIn.isEnabled = false
-            safe.isEnabled = false
-        } else {
-            val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(session.expectedEndAt))
-            root.findViewById<TextView>(R.id.activeSessionTitle).text = session.mode.label
-            val destination = session.destinationLabel?.let { " · " + it } ?: ""
-            root.findViewById<TextView>(R.id.activeSessionMeta).text =
-                "Expected safe by " + time + " · " + session.batteryPercent + "% battery" + destination
-            val location = vm.lastLocationLabel()
-            root.findViewById<TextView>(R.id.locationStatus).text =
-                if (location == null) "Location: unavailable or not permitted"
-                else "Location snapshot: available · protected by privacy mode"
-            extend5.isEnabled = true
-            extend15.isEnabled = true
-            checkIn.isEnabled = true
-            safe.isEnabled = true
-            startCountdown(session.expectedEndAt)
+        if (session == null) {
+            readiness.text = "—"
+            stateView.text = "NO ACTIVE SESSION"
+            summary.text = "Start a Safety Session to calculate readiness from live session conditions."
+            renderInactive("No active session", "Start before a walk, rideshare, meetup, or time alone.")
+            return
         }
+
+        if (session.resolved) {
+            countdown?.cancel()
+            readiness.text = "—"
+            stateView.text = "RESOLVED"
+            val resolvedText = session.resolvedAt?.let {
+                SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(it))
+            } ?: "recently"
+            summary.text = "Monitoring ended at $resolvedText. This session is read-only and remains in Safety History."
+            renderInactive(
+                "Last session resolved",
+                "${session.mode.label}${session.destinationLabel?.let { " · $it" } ?: ""} · resolved $resolvedText"
+            )
+            root.findViewById<TextView>(R.id.sessionCountdown).text = "Monitoring ended"
+            return
+        }
+
+        readiness.text = snapshot.score.toString() + "/100"
+        stateView.text = snapshot.state.name.replace('_', ' ')
+        summary.text = snapshot.reasons.joinToString("  •  ")
+
+        val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(session.expectedEndAt))
+        root.findViewById<TextView>(R.id.activeSessionTitle).text = session.mode.label
+        val destination = session.destinationLabel?.let { " · $it" } ?: ""
+        root.findViewById<TextView>(R.id.activeSessionMeta).text =
+            "Expected safe by $time · ${session.batteryPercent}% battery$destination"
+        val location = vm.lastLocationLabel()
+        root.findViewById<TextView>(R.id.locationStatus).text =
+            if (location == null) "Location: unavailable or not permitted"
+            else "Location snapshot available · visibility follows session privacy policy"
+        extend5.isEnabled = true
+        extend15.isEnabled = true
+        checkIn.isEnabled = true
+        safe.isEnabled = true
+        startCountdown(session.expectedEndAt)
+    }
+
+    private fun renderInactive(title: String, meta: String) {
+        countdown?.cancel()
+        root.findViewById<TextView>(R.id.activeSessionTitle).text = title
+        root.findViewById<TextView>(R.id.activeSessionMeta).text = meta
+        root.findViewById<TextView>(R.id.sessionCountdown).text = "--:--"
+        root.findViewById<TextView>(R.id.locationStatus).text = "No session-scoped location sharing is active"
+        root.findViewById<Button>(R.id.extend5Button).isEnabled = false
+        root.findViewById<Button>(R.id.extend15Button).isEnabled = false
+        root.findViewById<Button>(R.id.checkInButton).isEnabled = false
+        root.findViewById<Button>(R.id.safeButton).isEnabled = false
     }
 
     private fun startCountdown(expectedEndAt: Long) {
         countdown?.cancel()
-        val remaining = (expectedEndAt - System.currentTimeMillis()).coerceAtLeast(0L)
+        val remaining = expectedEndAt - System.currentTimeMillis()
         val countdownView = root.findViewById<TextView>(R.id.sessionCountdown)
+        if (remaining <= 0L) {
+            val overdueMinutes = ((-remaining) / 60_000L).coerceAtLeast(0L)
+            countdownView.text = if (overdueMinutes == 0L) "Check-in due now" else "$overdueMinutes min overdue"
+            return
+        }
         countdown = object : CountDownTimer(remaining, 1_000L) {
             override fun onTick(ms: Long) {
                 val totalSeconds = ms / 1_000L
