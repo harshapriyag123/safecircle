@@ -21,7 +21,8 @@ data class SafetySession(
     val routeDeviation: Boolean = false,
     val batteryPercent: Int = 72,
     val state: SafetyState = SafetyState.NORMAL,
-    val resolved: Boolean = false
+    val resolved: Boolean = false,
+    val destinationLabel: String? = null
 )
 
 data class Guardian(
