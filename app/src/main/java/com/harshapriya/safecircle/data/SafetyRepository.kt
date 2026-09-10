@@ -1,24 +1,44 @@
 package com.harshapriya.safecircle.data
 
 import android.content.Context
+import com.harshapriya.safecircle.background.SafetyScheduler
 import com.harshapriya.safecircle.model.Guardian
 import com.harshapriya.safecircle.model.SafetySession
 import com.harshapriya.safecircle.model.SafetyState
 import com.harshapriya.safecircle.model.SessionMode
+import com.harshapriya.safecircle.platform.BatteryMonitor
+import com.harshapriya.safecircle.platform.LocationProvider
+import com.harshapriya.safecircle.reliability.AuditEvent
+import com.harshapriya.safecircle.reliability.AuditLog
 import java.util.UUID
 
-class SafetyRepository(context: Context) {
+class SafetyRepository(private val context: Context) {
     private val prefs = context.getSharedPreferences("safecircle", Context.MODE_PRIVATE)
+    private val battery = BatteryMonitor(context)
+    private val location = LocationProvider(context)
+    private val scheduler = SafetyScheduler(context)
+    private val audit = AuditLog(context)
 
     fun startSession(mode: SessionMode): SafetySession {
         val now = System.currentTimeMillis()
-        return SafetySession(
+        val session = SafetySession(
             id = UUID.randomUUID().toString(),
             mode = mode,
             startedAt = now,
             expectedEndAt = now + mode.minutes * 60_000L,
             lastCheckInAt = now,
-        ).also(::saveSession)
+            batteryPercent = battery.currentPercent(),
+        )
+        saveSession(session)
+        scheduler.schedule(session.id, session.expectedEndAt)
+        audit.append(AuditEvent(now, "SESSION_STARTED", session.id, "mode=${mode.name}"))
+        location.lastKnown()?.let {
+            prefs.edit()
+                .putString("last_location", "${it.latitude},${it.longitude}")
+                .putFloat("last_accuracy", it.accuracyMeters)
+                .apply()
+        }
+        return session
     }
 
     fun currentSession(): SafetySession? {
@@ -33,15 +53,31 @@ class SafetyRepository(context: Context) {
             lastCheckInAt = prefs.getLong("checkin", 0L),
             missedCheckIns = prefs.getInt("missed", 0),
             routeDeviation = prefs.getBoolean("route_deviation", false),
-            batteryPercent = prefs.getInt("battery", 72),
+            batteryPercent = battery.currentPercent(),
             state = state,
             resolved = prefs.getBoolean("resolved", false),
         )
     }
 
+    fun updateEta(addMinutes: Int): SafetySession? {
+        val current = currentSession() ?: return null
+        scheduler.cancel(current.id)
+        val updated = current.copy(expectedEndAt = current.expectedEndAt + addMinutes * 60_000L)
+        saveSession(updated)
+        scheduler.schedule(updated.id, updated.expectedEndAt)
+        audit.append(AuditEvent(System.currentTimeMillis(), "ETA_UPDATED", updated.id, "deltaMinutes=$addMinutes"))
+        return updated
+    }
+
     fun checkIn(): SafetySession? = currentSession()?.copy(
-        lastCheckInAt = System.currentTimeMillis(), missedCheckIns = 0, state = SafetyState.NORMAL
-    )?.also(::saveSession)
+        lastCheckInAt = System.currentTimeMillis(),
+        missedCheckIns = 0,
+        batteryPercent = battery.currentPercent(),
+        state = SafetyState.NORMAL
+    )?.also {
+        saveSession(it)
+        audit.append(AuditEvent(System.currentTimeMillis(), "CHECK_IN", it.id, "user confirmed"))
+    }
 
     fun simulateConcern(): SafetySession? = currentSession()?.copy(
         missedCheckIns = 1,
@@ -52,7 +88,13 @@ class SafetyRepository(context: Context) {
 
     fun markSafe(): SafetySession? = currentSession()?.copy(
         resolved = true, state = SafetyState.RESOLVED
-    )?.also(::saveSession)
+    )?.also {
+        saveSession(it)
+        scheduler.cancel(it.id)
+        audit.append(AuditEvent(System.currentTimeMillis(), "SESSION_RESOLVED", it.id, "user marked safe"))
+    }
+
+    fun lastLocationLabel(): String? = prefs.getString("last_location", null)
 
     private fun saveSession(s: SafetySession) {
         prefs.edit()
@@ -70,8 +112,8 @@ class SafetyRepository(context: Context) {
     }
 
     fun guardians(): List<Guardian> = listOf(
-        Guardian("Sankar", "Primary guardian", "Push + SMS", primary = true),
-        Guardian("Priya", "Backup guardian", "Push"),
+        Guardian("Primary Guardian", "Primary guardian", "Push + SMS", primary = true),
+        Guardian("Backup Guardian", "Backup guardian", "Push"),
         Guardian("Family Circle", "Escalation group", "Push + call plan"),
     )
 }
