@@ -458,6 +458,12 @@ The final packaging may evolve during product validation.
 
 ---
 
+## 🎬 Hackathon demo
+
+A repeatable 3–4 minute judge walkthrough is available in **[docs/DEMO.md](docs/DEMO.md)**. The Android app also includes **Pro → System health → Judge Demo Mode** to seed, escalate, and resolve the demo deterministically.
+
+---
+
 # 📱 Product Surfaces
 
 SafeCircle now exposes the roadmap as real product screens rather than leaving features only in architecture notes.
