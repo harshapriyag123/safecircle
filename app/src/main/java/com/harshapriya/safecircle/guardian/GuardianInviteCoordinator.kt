@@ -2,6 +2,7 @@ package com.harshapriya.safecircle.guardian
 
 import android.content.Context
 import com.harshapriya.safecircle.auth.AccountRepository
+import com.harshapriya.safecircle.auth.AuthRepository
 import com.harshapriya.safecircle.data.SafetyRepository
 import com.harshapriya.safecircle.domain.SafetyEngine
 import com.harshapriya.safecircle.platform.LocationProvider
@@ -25,9 +26,10 @@ class GuardianInviteCoordinator(private val context: Context) {
             throw IllegalStateException("The current Safety Session is already resolved.")
         }
 
+        val token = AuthRepository(context).state()?.accessToken ?: NetworkConfig.demoToken
         val gateway: SafeCircleGateway =
-            if (NetworkConfig.isConfigured) {
-                HttpSafeCircleGateway(NetworkConfig.baseUrl, NetworkConfig.demoToken)
+            if (NetworkConfig.hasBackend && token.isNotBlank()) {
+                HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
             } else {
                 LocalDemoGateway()
             }
