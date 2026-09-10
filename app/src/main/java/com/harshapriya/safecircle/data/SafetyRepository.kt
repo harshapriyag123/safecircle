@@ -21,15 +21,19 @@ class SafetyRepository(private val context: Context) {
     private val audit = AuditLog(context)
     private val history = SafetyHistoryRepository(context)
 
-    fun startSession(mode: SessionMode): SafetySession {
+    fun startSession(mode: SessionMode): SafetySession = startSession(mode, mode.minutes, null)
+
+    fun startSession(mode: SessionMode, durationMinutes: Int, destinationLabel: String?): SafetySession {
         val now = System.currentTimeMillis()
+        val safeDuration = durationMinutes.coerceIn(5, 24 * 60)
         val session = SafetySession(
             id = UUID.randomUUID().toString(),
             mode = mode,
             startedAt = now,
-            expectedEndAt = now + mode.minutes * 60_000L,
+            expectedEndAt = now + safeDuration * 60_000L,
             lastCheckInAt = now,
             batteryPercent = battery.currentPercent(),
+            destinationLabel = destinationLabel?.trim()?.takeIf { it.isNotBlank() }
         )
         saveSession(session)
         scheduler.schedule(session.id, session.expectedEndAt)
@@ -59,6 +63,7 @@ class SafetyRepository(private val context: Context) {
             batteryPercent = battery.currentPercent(),
             state = state,
             resolved = prefs.getBoolean("resolved", false),
+            destinationLabel = prefs.getString("destination", null)
         )
     }
 
@@ -113,6 +118,7 @@ class SafetyRepository(private val context: Context) {
             .putInt("battery", s.batteryPercent)
             .putString("state", s.state.name)
             .putBoolean("resolved", s.resolved)
+            .putString("destination", s.destinationLabel)
             .apply()
     }
 
