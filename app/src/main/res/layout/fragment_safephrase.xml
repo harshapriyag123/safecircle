@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/surface_soft">
   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DISCREET ACTIVATION + MESSAGE SAFETY" android:textColor="@color/brand" android:textSize="12sp" android:textStyle="bold" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="SafePhrase & Scam Shield" android:textColor="@color/ink" android:textSize="32sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="SafePhrase &amp; Scam Shield" android:textColor="@color/ink" android:textSize="32sp" android:textStyle="bold" />
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Use a private activation phrase, or inspect suspicious SMS, email, and chat messages before you click, pay, or share a code." android:textColor="@color/muted" android:textSize="15sp" />
 
     <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="26dp" app:cardBackgroundColor="@color/brand_dark" app:cardElevation="0dp">
