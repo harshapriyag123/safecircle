@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+from .server_crypto import decrypt_json, encrypt_json
+
 DB_PATH = Path(os.getenv("SAFECIRCLE_DB_PATH", "/tmp/safecircle.db"))
 _lock = threading.Lock()
 
@@ -119,7 +121,7 @@ def upsert_session(data: dict[str, Any]) -> None:
                 data.get("longitude"),
                 data.get("location_accuracy"),
                 data.get("privacy_mode", "PRECISE_ON_ESCALATION"),
-                json.dumps(data.get("capsule")) if data.get("capsule") is not None else None,
+                encrypt_json(data.get("capsule")),
                 1 if data.get("resolved") else 0,
                 data.get("resolved_at"),
                 now,
@@ -134,10 +136,7 @@ def get_session(session_id: str) -> dict[str, Any] | None:
         return None
     result = dict(row)
     result["resolved"] = bool(result["resolved"])
-    if result.get("capsule_json"):
-        result["capsule"] = json.loads(result["capsule_json"])
-    else:
-        result["capsule"] = None
+    result["capsule"] = decrypt_json(result.get("capsule_json"))
     return result
 
 
