@@ -18,6 +18,10 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent" android:layout_height="54dp"
             android:text="Invite Guardian" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/createFamilyCircleButton"
+            android:layout_width="match_parent" android:layout_height="54dp"
+            android:layout_marginTop="10dp" android:text="Create / Open Family Circle" />
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="20dp" app:cardCornerRadius="24dp" app:cardElevation="0dp">
