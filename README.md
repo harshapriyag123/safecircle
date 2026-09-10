@@ -496,6 +496,38 @@ Advanced automations, recurring routines, Family Circles, configurable SafePhras
 
 ---
 
+# 🌐 Full-Stack Implementation
+
+SafeCircle is no longer only a client-side prototype. The repository includes an optional deployable **FastAPI backend** and a connected **Guardian Live** web surface.
+
+```text
+Android app
+  ├─ Safety Session state
+  ├─ WorkManager escalation
+  ├─ local encrypted Safety Capsule
+  ├─ offline event queue
+  └─ HttpSafeCircleGateway
+            │
+            ▼
+FastAPI backend
+  ├─ SQLite demo persistence
+  ├─ signed Guardian tokens
+  ├─ privacy-scoped Guardian API
+  ├─ server escalation events
+  ├─ encrypted Safety Capsule at rest
+  ├─ RevenueCat webhook mirror
+  └─ Guardian Live static web portal
+            │
+            ▼
+Trusted Guardian browser
+```
+
+The backend has its own CI workflow and tests for health, owner session operations, Guardian privacy redaction, and RevenueCat webhook handling.
+
+> The remaining production integration boundary is **real user authentication + push/SMS delivery infrastructure**. The repository intentionally does not pretend those external services are connected without credentials.
+
+---
+
 # 🏗️ Architecture
 
 SafeCircle now uses a layered architecture that separates **safety decisions**, **device signals**, **privacy**, **reliability**, **Guardian delivery**, and **monetization**.
@@ -861,40 +893,57 @@ SafeCircle keeps the user in control and treats automation as orchestration, not
 ## Phase 2 — Connected Safety
 
 - [x] Stable local account identity + cloud identity contract
-- [x] Expiring Guardian invite/share flow
-- [x] Local safety notifications
-- [x] Guardian web prototype
+- [x] FastAPI session synchronization backend
+- [x] Signed, expiring, revocable Guardian access tokens
+- [x] Guardian Live web portal connected to privacy-scoped API data
+- [x] Android HTTP gateway + offline event reconciliation
+- [x] Immediate + periodic background synchronization
+- [x] Actionable "Check in" / "I'm safe" notifications
 - [x] Background escalation scheduler with WorkManager
 - [x] Real Android battery integration
 - [x] User-consented Android location adapter
-- [x] Editable ETA API + job rescheduling
+- [x] Dedicated Safety Session setup screen with destination + custom ETA
+- [x] Editable ETA + background job rescheduling
 - [x] Offline event queue
-- [ ] Connect production push/SMS provider
-- [ ] Connect authenticated multi-device backend sync
+- [x] Server-side escalation stage engine and event queue
+- [ ] Plug in production push/SMS delivery provider
+- [ ] Replace demo shared API token with per-user production authentication
 
 ## Phase 3 — Privacy & Reliability
 
 - [x] Android Keystore + AES-GCM Safety Capsule encryption
+- [x] Server-side Safety Capsule encryption at rest
 - [x] Capsule expiry + purge support
+- [x] Privacy modes: status-only, approximate, precise-on-escalation
+- [x] Progressive location disclosure in Guardian API
+- [x] Safety Capsule withheld until escalation threshold
 - [x] Local audit trail
 - [x] Delivery receipt model
-- [x] Idempotent escalation-stage keys
-- [x] Rate limiting
-- [x] Offline retry queue
+- [x] Idempotent server escalation events
+- [x] Client rate limiting and stale-notification rejection
+- [x] Offline retry queue + server acknowledgement
+- [x] Emergency Profile integration into authorized capsule data
+- [x] Session history + shareable Safety Receipts
 - [x] Threat model
+- [x] System Health diagnostics screen
 - [ ] Production accessibility audit
-- [ ] External security review
+- [ ] External security / privacy review
 
 ## Phase 4 — SafeCircle Family
 
 - [x] RevenueCat entitlement architecture ready for Family tier
-- [x] Local Family Circle repository
-- [x] Recurring commute scheduler
-- [x] Guardian web experience prototype
+- [x] RevenueCat-gated advanced Automations, Family Circle, and privacy controls
+- [x] Dedicated Family Circles management screen
+- [x] Multiple local Circles and member roles
+- [x] Recurring commute routine that reschedules itself
+- [x] Advanced IF → THEN Automation Builder screen
+- [x] Configurable + testable SafePhrase flow
+- [x] Guardian Live web experience
 - [x] Cross-platform account/sync gateway contract
-- [x] Advanced automation rule repository
-- [ ] Production Family product IDs/offering
-- [ ] Authenticated Android/iOS cloud account sync
+- [x] First-run onboarding and product education
+- [x] FastAPI RevenueCat webhook mirror for server-side entitlement awareness
+- [ ] Create production Family product IDs/offering in store dashboards
+- [ ] Build native iOS client against the same API contract
 
 ---
 
