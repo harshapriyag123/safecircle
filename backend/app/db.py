@@ -70,6 +70,13 @@ def init_db() -> None:
                 created_at INTEGER NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS subscriptions (
                 app_user_id TEXT PRIMARY KEY,
                 entitlement_id TEXT NOT NULL,
@@ -278,3 +285,30 @@ def get_subscription(app_user_id: str) -> dict[str, Any] | None:
     item = dict(row)
     item["is_active"] = bool(item["is_active"])
     return item
+
+
+def create_user(user_id: str, email: str, password_hash: str) -> bool:
+    try:
+        with _lock, connect() as conn:
+            conn.execute(
+                "INSERT INTO users(id,email,password_hash,created_at) VALUES(?,?,?,?)",
+                (user_id, email.lower().strip(), password_hash, int(time.time() * 1000)),
+            )
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+
+def get_user_by_email(email: str) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM users WHERE email=?",
+            (email.lower().strip(),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def get_user(user_id: str) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    return dict(row) if row else None
