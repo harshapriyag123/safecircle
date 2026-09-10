@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.button.MaterialButton
 import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.background.SyncScheduler
 import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.history.SafetyHistoryRepository
 import com.harshapriya.safecircle.history.SafetyReceipt
@@ -96,6 +97,7 @@ class VaultFragment : Fragment() {
             put("expiresAt", expires)
         }.toString()
         store.put(session.id, json, expires)
+        SyncScheduler.syncNow(requireContext())
         Toast.makeText(requireContext(), "Encrypted Safety Capsule created", Toast.LENGTH_SHORT).show()
         render()
     }
@@ -117,6 +119,7 @@ class VaultFragment : Fragment() {
                     else -> LocationPrivacyMode.PRECISE_ON_ESCALATION
                 }
                 prefs.savePrivacy(current.copy(locationMode = mode))
+                SyncScheduler.syncNow(requireContext())
                 dialog.dismiss()
                 render()
             }
