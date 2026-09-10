@@ -21,7 +21,16 @@
     <fragment
         android:id="@+id/navigation_automations"
         android:name="com.harshapriya.safecircle.ui.automations.AutomationsFragment"
-        android:label="@string/title_automations" />
+        android:label="@string/title_automations">
+        <action
+            android:id="@+id/action_navigation_automations_to_builder"
+            app:destination="@id/navigation_automation_builder" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_automation_builder"
+        android:name="com.harshapriya.safecircle.ui.automations.AutomationBuilderFragment"
+        android:label="Build Automation" />
 
     <fragment
         android:id="@+id/navigation_circle"
