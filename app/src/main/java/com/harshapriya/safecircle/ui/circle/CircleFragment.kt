@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.harshapriya.safecircle.MainActivity
@@ -46,14 +47,7 @@ class CircleFragment : Fragment() {
         SubscriptionManager.refresh()
         root.findViewById<MaterialButton>(R.id.createFamilyCircleButton).setOnClickListener {
             requirePro {
-                val existing = familyRepo.circles().firstOrNull()
-                if (existing == null) {
-                    familyRepo.create("My Family")
-                    Toast.makeText(requireContext(), "Family Circle created", Toast.LENGTH_SHORT).show()
-                    renderFamily()
-                } else {
-                    showAddFamilyMember(existing.id)
-                }
+                findNavController().navigate(R.id.action_navigation_circle_to_family)
             }
         }
 
