@@ -22,7 +22,9 @@ data class SafetySession(
     val batteryPercent: Int = 72,
     val state: SafetyState = SafetyState.NORMAL,
     val resolved: Boolean = false,
-    val destinationLabel: String? = null
+    val destinationLabel: String? = null,
+    val originLabel: String? = null,
+    val resolvedAt: Long? = null
 )
 
 data class Guardian(
