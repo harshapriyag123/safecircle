@@ -15,9 +15,15 @@ def require_bearer(authorization: str | None) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise PermissionError("Missing bearer token")
     token = authorization.removeprefix("Bearer ").strip()
-    if not hmac.compare_digest(token, API_SECRET):
+
+    try:
+        payload = verify_access_token(token)
+        return str(payload["sub"])
+    except Exception:
+        allow_demo = os.getenv("SAFECIRCLE_ALLOW_DEMO_TOKEN", "false").lower() == "true"
+        if allow_demo and hmac.compare_digest(token, API_SECRET):
+            return "demo-owner"
         raise PermissionError("Invalid bearer token")
-    return token
 
 
 def _b64_encode(raw: bytes) -> str:
