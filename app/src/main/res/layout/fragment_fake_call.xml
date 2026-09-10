@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_soft">
+
+    <ScrollView
+        android:id="@+id/fakeCallSetup"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="EXIT AID" android:textColor="@color/brand" android:textSize="12sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Fake Call" android:textColor="@color/ink" android:textSize="32sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Schedule a clearly simulated incoming call when you need a discreet reason to step away." android:textColor="@color/muted" android:textSize="15sp" />
+
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="22dp" app:cardBackgroundColor="@color/brand_mint" app:cardElevation="0dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="18dp" android:text="SIMULATED CALL ONLY — this feature never contacts police, emergency services, or a real caller." android:textColor="@color/ink" android:textStyle="bold" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <EditText android:id="@+id/fakeCallerInput" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="18dp" android:hint="Caller label" android:text="Trusted contact" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/fakeCallScheduleButton" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="12dp" android:text="Schedule call in 5 seconds" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/fakeCallCancelScheduleButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:text="Cancel scheduled call" />
+            <TextView android:id="@+id/fakeCallCountdown" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="No simulated call is scheduled." android:textColor="@color/muted" />
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/fakeCallIncoming"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/brand_dark"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="26dp"
+        android:visibility="gone">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="36dp" android:text="SIMULATED INCOMING CALL · EXIT AID" android:textColor="#BFD8CF" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:layout_width="128dp" android:layout_height="128dp" android:layout_marginTop="48dp" android:background="@color/brand_mint" android:gravity="center" android:text="👤" android:textSize="54sp" />
+        <TextView android:id="@+id/fakeCallCallerName" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:gravity="center" android:text="Trusted contact" android:textColor="@android:color/white" android:textSize="38sp" android:textStyle="bold" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Incoming call" android:textColor="#C9DED6" android:textSize="20sp" />
+        <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton android:id="@+id/fakeCallDeclineButton" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:text="Decline" app:backgroundTint="#C94537" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/fakeCallAnswerButton" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Answer" app:backgroundTint="@color/brand" />
+        </LinearLayout>
+        <Space android:layout_width="1dp" android:layout_height="36dp" />
+    </LinearLayout>
+</FrameLayout>
