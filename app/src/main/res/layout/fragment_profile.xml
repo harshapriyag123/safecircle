@@ -151,6 +151,14 @@
             android:layout_marginTop="10dp"
             android:text="Restore purchases" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/systemHealthButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="10dp"
+            android:text="System health" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
