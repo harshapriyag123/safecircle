@@ -1,7 +1,13 @@
 <resources>
-    <color name="brand">#315E58</color>
-    <color name="brand_dark">#173D39</color>
-    <color name="surface_soft">#F3F7F6</color>
-    <color name="ink">#12211F</color>
+    <color name="brand">#126E52</color>
+    <color name="brand_dark">#0A4D3A</color>
+    <color name="brand_lime">#DFF06D</color>
+    <color name="brand_mint">#DDF3E9</color>
+    <color name="surface_soft">#F4F7F4</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="ink">#13231D</color>
+    <color name="muted">#61716A</color>
     <color name="warning">#B85C38</color>
+    <color name="danger">#B63D32</color>
+    <color name="border_soft">#DDE6E1</color>
 </resources>
