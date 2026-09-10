@@ -35,7 +35,16 @@
     <fragment
         android:id="@+id/navigation_circle"
         android:name="com.harshapriya.safecircle.ui.circle.CircleFragment"
-        android:label="@string/title_circle" />
+        android:label="@string/title_circle">
+        <action
+            android:id="@+id/action_navigation_circle_to_family"
+            app:destination="@id/navigation_family_circle" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_family_circle"
+        android:name="com.harshapriya.safecircle.ui.family.FamilyCircleFragment"
+        android:label="Family Circles" />
 
     <fragment
         android:id="@+id/navigation_vault"
