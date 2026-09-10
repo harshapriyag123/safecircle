@@ -3,40 +3,104 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SafeCircle Guardian View</title>
+  <title>SafeCircle Guardian Live</title>
   <style>
-    :root{font-family:Inter,system-ui,sans-serif;background:#f3f7f6;color:#12211f}
-    body{margin:0;display:grid;place-items:center;min-height:100vh;padding:24px}
-    .shell{width:min(720px,100%);background:white;border-radius:28px;padding:28px;box-shadow:0 20px 70px #173d3918}
-    .brand{font-weight:800;font-size:28px;color:#173d39}
-    .pill{display:inline-block;padding:8px 12px;border-radius:999px;background:#e4f1ef;color:#315e58;font-weight:700}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:22px 0}
-    .card{background:#f7faf9;border-radius:18px;padding:18px}
-    .k{font-size:12px;color:#60716f;text-transform:uppercase;letter-spacing:.08em}
-    .v{font-size:20px;font-weight:750;margin-top:6px}
-    button{border:0;border-radius:16px;padding:15px 18px;font-weight:750;cursor:pointer}
+    :root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#eef4f2;color:#12211f}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;padding:24px;background:radial-gradient(circle at top,#dcece8 0,#eef4f2 38%,#f8faf9 100%)}
+    .shell{width:min(760px,100%);margin:24px auto;background:#fff;border:1px solid #dce7e4;border-radius:30px;padding:28px;box-shadow:0 22px 80px #173d3918}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{font-weight:850;font-size:28px;color:#173d39}
+    .pill{display:inline-flex;padding:8px 12px;border-radius:999px;background:#e4f1ef;color:#315e58;font-weight:750;font-size:13px}
+    h1{font-size:34px;margin:28px 0 8px}
+    .sub{color:#526664;line-height:1.55}
+    .status{margin:22px 0;padding:18px;border-radius:20px;background:#eef7f4;border:1px solid #d5e8e2}
+    .status strong{display:block;font-size:22px;margin-bottom:6px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:18px 0}
+    .card{background:#f7faf9;border:1px solid #edf2f1;border-radius:20px;padding:18px}
+    .k{font-size:12px;color:#60716f;text-transform:uppercase;letter-spacing:.09em}
+    .v{font-size:20px;font-weight:780;margin-top:7px}
+    .timeline{margin:24px 0}
+    .step{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #edf2f1}
+    .dot{width:12px;height:12px;border-radius:50%;background:#315e58;margin-top:5px;flex:0 0 auto}
+    button{border:0;border-radius:16px;padding:15px 18px;font-weight:760;cursor:pointer;font-size:15px}
     .primary{background:#315e58;color:white}.secondary{background:#eef3f2;color:#173d39}
     .actions{display:flex;gap:12px;flex-wrap:wrap}
-    .privacy{margin-top:22px;padding:16px;border-left:4px solid #315e58;background:#f7faf9}
+    .privacy{margin-top:24px;padding:18px;border-left:4px solid #315e58;background:#f7faf9;line-height:1.55}
+    .danger{background:#fff1ee;border-color:#ffd9d0}.danger strong{color:#a84328}
+    @media(max-width:560px){.grid{grid-template-columns:1fr}.shell{padding:20px;border-radius:22px}h1{font-size:28px}}
   </style>
 </head>
 <body>
   <main class="shell">
-    <div class="brand">🛡️ SafeCircle</div>
-    <p class="pill">Guardian View · Demo</p>
-    <h1>Walk Home session</h1>
-    <p>Temporary session visibility. Precise location stays private unless the configured escalation threshold is reached.</p>
-    <section class="grid">
-      <div class="card"><div class="k">Status</div><div class="v">On schedule ✓</div></div>
-      <div class="card"><div class="k">Expected safe</div><div class="v">10:05 PM</div></div>
-      <div class="card"><div class="k">Last check-in</div><div class="v">1 min ago</div></div>
-      <div class="card"><div class="k">Battery</div><div class="v">72%</div></div>
-    </section>
-    <div class="actions">
-      <button class="primary" onclick="alert('Demo request sent')">Request check-in</button>
-      <button class="secondary" onclick="alert('Call action placeholder')">Call</button>
+    <div class="top">
+      <div class="brand">🛡️ SafeCircle</div>
+      <div class="pill">Guardian Live · Session scoped</div>
     </div>
-    <div class="privacy"><strong>Privacy-first:</strong> this page is designed to expire with the Safety Session and reveal only user-authorized data.</div>
+
+    <h1 id="title">Walk Home session</h1>
+    <p class="sub">A temporary view for a trusted Guardian. This page is designed to expire with the Safety Session and reveal only user-authorized information.</p>
+
+    <section id="statusCard" class="status">
+      <strong id="status">On schedule ✓</strong>
+      <span id="explain">No unresolved session condition currently requires escalation.</span>
+    </section>
+
+    <section class="grid">
+      <div class="card"><div class="k">Expected safe</div><div class="v" id="eta">10:05 PM</div></div>
+      <div class="card"><div class="k">Last check-in</div><div class="v" id="checkin">1 min ago</div></div>
+      <div class="card"><div class="k">Battery</div><div class="v" id="battery">72%</div></div>
+      <div class="card"><div class="k">Location privacy</div><div class="v" id="privacy">Escalation only</div></div>
+    </section>
+
+    <section class="timeline">
+      <h2>Escalation plan</h2>
+      <div class="step"><span class="dot"></span><div><strong>0 min</strong><br/>Request a user check-in</div></div>
+      <div class="step"><span class="dot"></span><div><strong>+5 min</strong><br/>Primary Guardian acknowledgement</div></div>
+      <div class="step"><span class="dot"></span><div><strong>+10 min</strong><br/>Backup Guardian escalation</div></div>
+      <div class="step"><span class="dot"></span><div><strong>+15 min</strong><br/>Release pre-authorized Safety Capsule fields</div></div>
+    </section>
+
+    <div class="actions">
+      <button class="primary" onclick="requestCheckIn()">Request check-in</button>
+      <button class="secondary" onclick="callUser()">Call</button>
+    </div>
+
+    <div class="privacy">
+      <strong>Privacy-first.</strong> SafeCircle does not require permanent location access for Guardians. Precise information can remain locked until the user's configured escalation threshold is reached.
+    </div>
   </main>
+
+  <script>
+    const q = new URLSearchParams(location.search);
+    const get = (k, fallback) => q.get(k) || fallback;
+
+    const mode = get('mode', 'Walk Home').replaceAll('_',' ');
+    const status = get('state', 'NORMAL').replaceAll('_',' ');
+    const battery = get('battery', '72');
+    const eta = get('eta', '10:05 PM');
+    const checkin = get('checkin', '1 min ago');
+    const privacy = get('privacy', 'Escalation only');
+
+    document.getElementById('title').textContent = mode + ' session';
+    document.getElementById('status').textContent = status === 'NORMAL' ? 'On schedule ✓' : status;
+    document.getElementById('battery').textContent = battery + '%';
+    document.getElementById('eta').textContent = eta;
+    document.getElementById('checkin').textContent = checkin;
+    document.getElementById('privacy').textContent = privacy;
+
+    if (['CONCERN','ESCALATED'].includes(status)) {
+      document.getElementById('statusCard').classList.add('danger');
+      document.getElementById('explain').textContent =
+        'A configured Safety Session condition changed. Review the session and follow the user-defined escalation plan.';
+    }
+
+    function requestCheckIn(){
+      alert('Demo: check-in request queued. Production delivery uses the SafeCircleGateway notification adapter.');
+    }
+    function callUser(){
+      alert('Demo: open the trusted contact call action on a connected deployment.');
+    }
+  </script>
 </body>
 </html>
