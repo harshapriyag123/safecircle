@@ -1,7 +1,6 @@
 package com.harshapriya.safecircle.guardian
 
 import android.content.Context
-import com.harshapriya.safecircle.auth.AccountRepository
 import com.harshapriya.safecircle.auth.AuthRepository
 import com.harshapriya.safecircle.data.SafetyRepository
 import com.harshapriya.safecircle.domain.SafetyEngine
@@ -10,9 +9,7 @@ import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
 import com.harshapriya.safecircle.security.SafetyCapsuleStore
 import com.harshapriya.safecircle.sync.GuardianInviteLink
 import com.harshapriya.safecircle.sync.HttpSafeCircleGateway
-import com.harshapriya.safecircle.sync.LocalDemoGateway
 import com.harshapriya.safecircle.sync.NetworkConfig
-import com.harshapriya.safecircle.sync.SafeCircleGateway
 import com.harshapriya.safecircle.sync.SessionSyncPayload
 
 class GuardianInviteCoordinator(private val context: Context) {
@@ -20,29 +17,27 @@ class GuardianInviteCoordinator(private val context: Context) {
         role: String = "guardian",
         ttlMinutes: Int = 60
     ): GuardianInviteLink {
+        val auth = AuthRepository(context).state()
+            ?: throw IllegalStateException("Sign in to SafeCircle before creating a real Guardian link.")
+        if (!NetworkConfig.hasBackend) {
+            throw IllegalStateException("SafeCircle backend is not configured.")
+        }
+
         val session = SafetyRepository(context).currentSession()
             ?: throw IllegalStateException("Start a Safety Session before creating a session-scoped Guardian link.")
         if (session.resolved) {
-            throw IllegalStateException("The current Safety Session is already resolved.")
+            throw IllegalStateException("The current Safety Session is already resolved. Start another session first.")
         }
 
-        val token = AuthRepository(context).state()?.accessToken ?: NetworkConfig.demoToken
-        val gateway: SafeCircleGateway =
-            if (NetworkConfig.hasBackend && token.isNotBlank()) {
-                HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
-            } else {
-                LocalDemoGateway()
-            }
-
+        val gateway = HttpSafeCircleGateway(NetworkConfig.baseUrl, auth.accessToken)
         val snapshot = SafetyEngine.evaluate(session)
         val location = LocationProvider(context).lastKnown()
         val privacy = SafetyPreferencesRepository(context).privacy()
-        val ownerId = AccountRepository(context).stableUserId()
 
         gateway.upsertSession(
             SessionSyncPayload(
                 id = session.id,
-                ownerId = ownerId,
+                ownerId = auth.userId,
                 mode = session.mode.name,
                 destination = session.destinationLabel,
                 startedAt = session.startedAt,
@@ -61,7 +56,7 @@ class GuardianInviteCoordinator(private val context: Context) {
 
         return gateway.createGuardianInvite(
             sessionId = session.id,
-            ownerId = ownerId,
+            ownerId = auth.userId,
             role = role,
             ttlMinutes = ttlMinutes
         )

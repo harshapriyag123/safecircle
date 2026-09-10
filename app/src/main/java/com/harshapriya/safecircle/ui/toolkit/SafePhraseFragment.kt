@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.cyber.ScamDetector
 import com.harshapriya.safecircle.data.SafetyRepository
 import com.harshapriya.safecircle.model.SessionMode
 import com.harshapriya.safecircle.reliability.AuditEvent
@@ -23,6 +24,8 @@ class SafePhraseFragment : Fragment() {
         val phrase = root.findViewById<EditText>(R.id.safePhraseInput)
         val test = root.findViewById<EditText>(R.id.safePhraseTestInput)
         val status = root.findViewById<TextView>(R.id.safePhraseStatus)
+        val messageInput = root.findViewById<EditText>(R.id.messageScanInput)
+        val messageResult = root.findViewById<TextView>(R.id.messageScanResult)
         val safety = SafetyRepository(requireContext())
         val audit = AuditLog(requireContext())
         phrase.setText(prefs.getString("phrase", "blue notebook"))
@@ -67,6 +70,32 @@ class SafePhraseFragment : Fragment() {
             audit.append(AuditEvent(System.currentTimeMillis(), "SAFEPHRASE_ACTIVATED", session.id, "trusted-circle workflow activated"))
             status.text = "ACTIVATED ✓ SafeCircle moved the active Safety Session into CONCERN and queued normal sync/escalation handling."
             Toast.makeText(requireContext(), "SafePhrase activated", Toast.LENGTH_LONG).show()
+        }
+
+        root.findViewById<MaterialButton>(R.id.scanMessageButton).setOnClickListener {
+            val assessment = ScamDetector.analyze(messageInput.text.toString())
+            val signals = if (assessment.signals.isEmpty()) {
+                "• No common scam indicators found"
+            } else {
+                assessment.signals.joinToString("\n") { "• ${it.label}" }
+            }
+            messageResult.text =
+                "${assessment.riskLevel.uppercase()} RISK · ${assessment.riskScore}/100\n\n${assessment.verdict}\n\n$signals\n\nSafeCircle cannot prove a sender or message is genuine. Verify through an official phone number, app, or website before acting."
+            audit.append(
+                AuditEvent(
+                    System.currentTimeMillis(),
+                    "MESSAGE_RISK_SCAN",
+                    safety.currentSession()?.id,
+                    "level=${assessment.riskLevel};score=${assessment.riskScore}"
+                )
+            )
+        }
+
+        root.findViewById<MaterialButton>(R.id.useScamExampleButton).setOnClickListener {
+            messageInput.setText("URGENT: Your account will be suspended. Send the verification code and pay with gift cards now: https://bit.ly/demo")
+        }
+        root.findViewById<MaterialButton>(R.id.useSafeExampleButton).setOnClickListener {
+            messageInput.setText("Hi, your parcel is expected tomorrow between 2–4 PM. You can view updates in the official carrier app.")
         }
 
         return root

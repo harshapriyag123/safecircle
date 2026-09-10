@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/surface_soft">
   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DISCREET ACTIVATION" android:textColor="@color/brand" android:textSize="12sp" android:textStyle="bold" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="SafePhrase" android:textColor="@color/ink" android:textSize="32sp" android:textStyle="bold" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Choose a private phrase that can activate the trusted-circle workflow without revealing why you need help." android:textColor="@color/muted" android:textSize="15sp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DISCREET ACTIVATION + MESSAGE SAFETY" android:textColor="@color/brand" android:textSize="12sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="SafePhrase & Scam Shield" android:textColor="@color/ink" android:textSize="32sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Use a private activation phrase, or inspect suspicious SMS, email, and chat messages before you click, pay, or share a code." android:textColor="@color/muted" android:textSize="15sp" />
 
     <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="26dp" app:cardBackgroundColor="@color/brand_dark" app:cardElevation="0dp">
       <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="22dp">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Private by default" android:textColor="@android:color/white" android:textSize="22sp" android:textStyle="bold" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="The phrase stays on this device. Guardians see only the resulting Safety Session state, never the phrase itself." android:textColor="#C9DED6" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="SafePhrase stays on this device. Message scanning is explainable and does not claim that a sender is genuine." android:textColor="#C9DED6" />
       </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -23,6 +23,20 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/testSafePhraseButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:text="Private test — no action" />
         <com.google.android.material.button.MaterialButton android:id="@+id/activateSafePhraseButton" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="8dp" android:text="Activate SafePhrase workflow" />
         <TextView android:id="@+id/safePhraseStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="No test has been run yet." android:textColor="@color/muted" />
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="22dp" app:cardElevation="0dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Scam Shield" android:textColor="@color/ink" android:textSize="22sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Paste an SMS, email, or chat. SafeCircle checks common pressure tactics, credential requests, payment requests, and suspicious links." android:textColor="@color/muted" />
+        <EditText android:id="@+id/messageScanInput" android:layout_width="match_parent" android:layout_height="140dp" android:layout_marginTop="12dp" android:gravity="top|start" android:hint="Paste the message here…" android:inputType="textMultiLine" android:padding="12dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+          <com.google.android.material.button.MaterialButton android:id="@+id/useScamExampleButton" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Scam example" />
+          <com.google.android.material.button.MaterialButton android:id="@+id/useSafeExampleButton" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Safer example" />
+        </LinearLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/scanMessageButton" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="8dp" android:text="Analyze message" />
+        <TextView android:id="@+id/messageScanResult" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:padding="14dp" android:background="@android:color/white" android:text="No message analyzed yet." android:textColor="@color/ink" android:lineSpacingExtra="4dp" />
       </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
   </LinearLayout>
