@@ -17,6 +17,7 @@ import com.harshapriya.safecircle.history.SafetyHistoryRepository
 import com.harshapriya.safecircle.history.SafetyReceipt
 import com.harshapriya.safecircle.model.SafetyCapsuleFactory
 import com.harshapriya.safecircle.privacy.LocationPrivacyMode
+import com.harshapriya.safecircle.profile.EmergencyProfileRepository
 import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
 import com.harshapriya.safecircle.reliability.AuditLog
 import com.harshapriya.safecircle.security.SafetyCapsuleStore
@@ -72,11 +73,12 @@ class VaultFragment : Fragment() {
             return
         }
         val config = prefs.privacy()
+        val emergency = EmergencyProfileRepository(requireContext()).load()
         val base = SafetyCapsuleFactory.fromSession(
             session = session,
-            destinationLabel = "Expected destination",
+            destinationLabel = session.destinationLabel,
             lastKnownLocationLabel = vm.lastLocationLabel(),
-            guardianInstructions = "Call me first; escalate only if I do not respond."
+            guardianInstructions = emergency.guardianInstruction
         )
         val expires = System.currentTimeMillis() + config.capsuleRetentionHours * 60L * 60L * 1000L
         val json = JSONObject().apply {
@@ -86,6 +88,10 @@ class VaultFragment : Fragment() {
             put("location", if (config.locationMode == LocationPrivacyMode.STATUS_ONLY) JSONObject.NULL else base.lastKnownLocationLabel)
             put("destination", if (config.shareDestinationOnEscalation) base.destinationLabel else JSONObject.NULL)
             put("instructions", base.guardianInstructions)
+            put("emergencyName", emergency.displayName.ifBlank { JSONObject.NULL })
+            put("primaryContact", emergency.primaryContact.ifBlank { JSONObject.NULL })
+            put("preferredLanguage", emergency.preferredLanguage)
+            put("emergencyNotes", emergency.emergencyNotes.ifBlank { JSONObject.NULL })
             put("privacyMode", config.locationMode.name)
             put("expiresAt", expires)
         }.toString()
