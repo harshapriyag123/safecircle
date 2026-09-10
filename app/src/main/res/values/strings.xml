@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">SafeCircle</string>
     <string name="title_home">Today</string>
-    <string name="title_circle">My Circle</string>
-    <string name="title_profile">SafeCircle+</string>
+    <string name="title_automations">Automate</string>
+    <string name="title_circle">Circle</string>
+    <string name="title_vault">Vault</string>
+    <string name="title_profile">Pro</string>
 </resources>
