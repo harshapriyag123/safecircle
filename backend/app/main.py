@@ -210,7 +210,13 @@ guardian_static = next((path for path in guardian_candidates if path.exists()), 
 if guardian_static is not None:
     app.mount("/guardian", StaticFiles(directory=guardian_static, html=True), name="guardian")
 
-
+webapp_candidates = [
+    Path(__file__).resolve().parent.parent / "web" / "app",
+    Path(__file__).resolve().parent.parent.parent / "web" / "app",
+]
+webapp_static = next((path for path in webapp_candidates if path.exists()), None)
+if webapp_static is not None:
+    app.mount("/app", StaticFiles(directory=webapp_static, html=True), name="webapp")
 
 
 @app.post("/v1/auth/register")
@@ -368,7 +374,6 @@ def ingest_events(
         if created:
             acknowledged.append(event.id)
         else:
-            # Duplicate server inserts are still considered acknowledged.
             acknowledged.append(event.id)
 
     return {"acknowledged_event_ids": acknowledged}
@@ -453,42 +458,22 @@ def revenuecat_webhook(
     expiration_at_ms = event.get("expiration_at_ms")
 
     if not app_user_id:
-        raise HTTPException(status_code=400, detail="RevenueCat event missing app_user_id")
+        raise HTTPException(status_code=400, detail="RevenueCat event is missing app_user_id")
 
-    active_types = {
-        "INITIAL_PURCHASE",
-        "RENEWAL",
-        "UNCANCELLATION",
-        "PRODUCT_CHANGE",
-        "NON_RENEWING_PURCHASE",
+    active = "safecircle_pro" in entitlement_ids and event_type not in {
+        "EXPIRATION",
+        "CANCELLATION",
+        "BILLING_ISSUE",
     }
-    inactive_types = {"EXPIRATION"}
-
-    current_active = event_type in active_types
-    if event_type not in active_types | inactive_types:
-        current_active = bool(expiration_at_ms and int(expiration_at_ms) > now_ms())
-
-    entitlement = "safecircle_pro" if "safecircle_pro" in entitlement_ids else (
-        entitlement_ids[0] if entitlement_ids else "safecircle_pro"
-    )
-
     db.upsert_subscription(
-        app_user_id=app_user_id,
-        entitlement_id=entitlement,
-        is_active=current_active,
-        product_id=product_id,
-        expiration_at_ms=expiration_at_ms,
+        app_user_id,
+        "safecircle_pro",
+        active,
+        product_id,
+        expiration_at_ms,
+        event_type,
     )
-    db.append_event(
-        None,
-        "REVENUECAT_" + event_type,
-        {
-            "app_user_id": app_user_id,
-            "entitlement": entitlement,
-            "active": current_active,
-        },
-    )
-    return {"ok": True}
+    return {"ok": True, "active": active}
 
 
 @app.get("/v1/subscriptions/{app_user_id}")
@@ -497,7 +482,9 @@ def subscription_status(
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
     auth_or_401(authorization)
-    return {
+    status = db.get_subscription(app_user_id, "safecircle_pro")
+    return status or {
         "app_user_id": app_user_id,
-        "subscription": db.get_subscription(app_user_id),
+        "entitlement": "safecircle_pro",
+        "active": False,
     }
