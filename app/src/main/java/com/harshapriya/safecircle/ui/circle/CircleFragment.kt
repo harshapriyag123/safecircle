@@ -13,7 +13,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.harshapriya.safecircle.MainActivity
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.family.FamilyCircleRepository
 import com.harshapriya.safecircle.guardian.GuardianInviteService
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
@@ -41,19 +43,30 @@ class CircleFragment : Fragment() {
             service.share(invite)
         }
 
+        SubscriptionManager.refresh()
         root.findViewById<MaterialButton>(R.id.createFamilyCircleButton).setOnClickListener {
-            val existing = familyRepo.circles().firstOrNull()
-            if (existing == null) {
-                val circle = familyRepo.create("My Family")
-                Toast.makeText(requireContext(), "Family Circle created", Toast.LENGTH_SHORT).show()
-                renderFamily()
-            } else {
-                showAddFamilyMember(existing.id)
+            requirePro {
+                val existing = familyRepo.circles().firstOrNull()
+                if (existing == null) {
+                    familyRepo.create("My Family")
+                    Toast.makeText(requireContext(), "Family Circle created", Toast.LENGTH_SHORT).show()
+                    renderFamily()
+                } else {
+                    showAddFamilyMember(existing.id)
+                }
             }
         }
 
         vm.session.observe(viewLifecycleOwner) { renderSession() }
         return root
+    }
+
+    private fun requirePro(action: () -> Unit) {
+        if (SubscriptionManager.isPro.value == true) {
+            action()
+        } else {
+            (activity as? MainActivity)?.showProPaywall()
+        }
     }
 
     private fun renderGuardians() {
