@@ -8,6 +8,7 @@ import com.harshapriya.safecircle.reliability.QueuedEvent
  * allowing REST/Firebase/Supabase implementations without changing domain logic.
  */
 interface SafeCircleGateway {
+    suspend fun upsertSession(payload: SessionSyncPayload): Boolean
     suspend fun upload(events: List<QueuedEvent>): List<String>
     suspend fun sendGuardianAlert(sessionId: String, recipientId: String, message: String): DeliveryReceipt
     suspend fun publishGuardianSnapshot(sessionId: String, payloadJson: String): String
