@@ -10,7 +10,10 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use(::load)
 }
 val revenueCatApiKey = localProperties.getProperty("REVENUECAT_API_KEY", "")
-val safeCircleApiBaseUrl = localProperties.getProperty("SAFECIRCLE_API_BASE_URL", "")
+val safeCircleApiBaseUrl = localProperties.getProperty(
+    "SAFECIRCLE_API_BASE_URL",
+    "https://safecircle-production-5a32.up.railway.app"
+)
 val safeCircleDemoApiToken = localProperties.getProperty("SAFECIRCLE_DEMO_API_TOKEN", "")
 
 android {
