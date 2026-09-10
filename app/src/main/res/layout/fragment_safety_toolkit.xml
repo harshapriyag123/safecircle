@@ -13,13 +13,21 @@
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAFETY TOOLKIT" android:textColor="@color/brand" android:textStyle="bold" android:textSize="12sp" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="More control when plans change." android:textColor="@color/ink" android:textSize="30sp" android:textStyle="bold" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Private tools for preparation, trusted contact escalation, nearby support, receipts, and the judge demo." android:textColor="@color/muted" android:textSize="15sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Private tools for discreet activation, an exit-aid call, nearby support, receipts, and judge-mode testing." android:textColor="@color/muted" android:textSize="15sp" />
 
         <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="26dp" app:cardBackgroundColor="@color/brand_dark" app:cardElevation="0dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="22dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAFEWORD" android:textColor="@color/brand_lime" android:textStyle="bold" android:textSize="12sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAFEPHRASE" android:textColor="@color/brand_lime" android:textStyle="bold" android:textSize="12sp" />
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="A discreet phrase can activate your trusted-circle workflow." android:textColor="@android:color/white" android:textSize="22sp" android:textStyle="bold" />
                 <com.google.android.material.button.MaterialButton android:id="@+id/toolkitSafePhrase" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="14dp" android:text="Open SafePhrase" android:textColor="@color/ink" app:backgroundTint="@color/brand_lime" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" app:cardCornerRadius="22dp" app:cardElevation="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Fake Call · exit aid" android:textColor="@color/ink" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Schedule a clearly simulated incoming call when you need a discreet reason to leave a situation." android:textColor="@color/muted" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/toolkitFakeCall" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="12dp" android:text="Schedule fake call" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -42,7 +50,7 @@
         <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" app:cardCornerRadius="22dp" app:cardBackgroundColor="@color/brand_mint" app:cardElevation="0dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Judge Mode" android:textColor="@color/ink" android:textSize="20sp" android:textStyle="bold" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Run a repeatable story: normal → concern → guardian escalation → resolved." android:textColor="@color/muted" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Run a repeatable story: normal → concern → Guardian escalation → resolved." android:textColor="@color/muted" />
                 <com.google.android.material.button.MaterialButton android:id="@+id/toolkitJudge" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="12dp" android:text="Launch judge demo" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
