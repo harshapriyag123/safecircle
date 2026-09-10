@@ -13,6 +13,29 @@ class HttpSafeCircleGateway(
     private val bearerToken: String
 ) : SafeCircleGateway {
 
+    override suspend fun upsertSession(payload: SessionSyncPayload): Boolean {
+        val body = JSONObject().apply {
+            put("id", payload.id)
+            put("owner_id", payload.ownerId)
+            put("mode", payload.mode)
+            put("destination", payload.destination ?: JSONObject.NULL)
+            put("started_at", payload.startedAt)
+            put("expected_end_at", payload.expectedEndAt)
+            put("last_check_in_at", payload.lastCheckInAt)
+            put("state", payload.state)
+            put("battery_percent", payload.batteryPercent ?: JSONObject.NULL)
+            put("latitude", payload.latitude ?: JSONObject.NULL)
+            put("longitude", payload.longitude ?: JSONObject.NULL)
+            put("location_accuracy", payload.locationAccuracy ?: JSONObject.NULL)
+            put("privacy_mode", payload.privacyMode)
+            put("capsule", JSONObject.NULL)
+            put("resolved", payload.resolved)
+            put("resolved_at", payload.resolvedAt ?: JSONObject.NULL)
+        }
+        post("/v1/sessions", body)
+        return true
+    }
+
     override suspend fun upload(events: List<QueuedEvent>): List<String> {
         if (events.isEmpty()) return emptyList()
 
