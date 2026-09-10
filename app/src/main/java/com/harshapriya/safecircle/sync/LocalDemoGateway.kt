@@ -6,6 +6,17 @@ import com.harshapriya.safecircle.reliability.QueuedEvent
 class LocalDemoGateway : SafeCircleGateway {
     override suspend fun upsertSession(payload: SessionSyncPayload): Boolean = true
 
+    override suspend fun createGuardianInvite(
+        sessionId: String,
+        ownerId: String,
+        role: String,
+        ttlMinutes: Int
+    ): GuardianInviteLink = GuardianInviteLink(
+        inviteId = "demo-" + sessionId,
+        url = "https://safecircle.app/guardian/?mode=Walk_Home&state=NORMAL",
+        expiresAt = System.currentTimeMillis() + ttlMinutes * 60_000L
+    )
+
     override suspend fun upload(events: List<QueuedEvent>): List<String> = events.map { it.id }
 
     override suspend fun sendGuardianAlert(
