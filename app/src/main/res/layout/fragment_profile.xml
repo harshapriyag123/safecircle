@@ -1,40 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/surface_soft">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="20dp">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="SafeCircle+" android:textSize="30sp" android:textStyle="bold"
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SafeCircle+"
+            android:textSize="30sp"
+            android:textStyle="bold"
             android:textColor="@color/ink" />
-        <TextView android:id="@+id/planStatus" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:text="Free plan" android:textStyle="bold"
-            android:textColor="@color/brand" android:layout_marginTop="6dp" />
+
+        <TextView
+            android:id="@+id/planStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Free plan"
+            android:textStyle="bold"
+            android:textColor="@color/brand"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:id="@+id/accountId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Account: local identity" />
 
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="18dp" app:cardCornerRadius="24dp" app:cardElevation="0dp">
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:padding="22dp"
-                android:text="Your circle, ready when it matters.&#10;&#10;✓ Unlimited Safety Sessions&#10;✓ Multiple Guardians&#10;✓ SafePhrase + duress workflows&#10;✓ Advanced escalation automations&#10;✓ Safety Capsule&#10;✓ Guardian Live View&#10;✓ Family Circle" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            app:cardCornerRadius="26dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="22dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your circle, ready when it matters."
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="✓ Unlimited Safety Sessions&#10;✓ Multiple Guardians &amp; Family Circles&#10;✓ SafePhrase and silent workflows&#10;✓ Advanced IF → THEN automations&#10;✓ Safety Capsule privacy controls&#10;✓ Guardian Live View&#10;✓ Recurring commute routines" />
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/upgradeButton"
-            android:layout_width="match_parent" android:layout_height="56dp"
-            android:layout_marginTop="18dp" android:text="View SafeCircle+ plans" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/manageButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="54dp"
-            android:layout_marginTop="10dp" android:text="Manage subscription" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/restoreButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="54dp"
-            android:layout_marginTop="10dp" android:text="Restore purchases" />
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="22dp" android:padding="16dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="RevenueCat entitlement"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="safecircle_pro&#10;default offering · monthly + yearly&#10;&#10;Access is checked through the entitlement — never by hardcoding a product purchase." />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/upgradeButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="18dp"
+            android:text="View SafeCircle+ plans" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/manageButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="10dp"
+            android:text="Manage subscription" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/restoreButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="10dp"
+            android:text="Restore purchases" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:padding="16dp"
             android:background="@android:color/white"
-            android:text="RevenueCat setup&#10;Entitlement: safecircle_pro&#10;Offering: default&#10;Packages: monthly + yearly&#10;&#10;Core emergency/check-in functionality remains free; premium unlocks advanced automation and family features." />
+            android:text="Core check-in and essential personal-safety functionality stays available without a subscription. SafeCircle+ monetizes automation, scale, family coordination, and advanced privacy controls." />
     </LinearLayout>
 </ScrollView>
