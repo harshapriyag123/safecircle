@@ -17,7 +17,9 @@ import com.harshapriya.safecircle.R
 import com.harshapriya.safecircle.automation.AutomationRepository
 import com.harshapriya.safecircle.automation.AutomationRule
 import com.harshapriya.safecircle.background.RecurringCommuteScheduler
+import com.harshapriya.safecircle.domain.PhraseSignal
 import com.harshapriya.safecircle.domain.SafePhraseConfig
+import com.harshapriya.safecircle.domain.SafePhraseEngine
 import com.harshapriya.safecircle.model.EscalationAction
 import com.harshapriya.safecircle.model.TriggerType
 import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
@@ -36,6 +38,7 @@ class AutomationsFragment : Fragment() {
         root.findViewById<MaterialButton>(R.id.addAutomationButton).setOnClickListener { addRule() }
         root.findViewById<MaterialButton>(R.id.scheduleCommuteButton).setOnClickListener { scheduleCommute() }
         root.findViewById<MaterialButton>(R.id.configureSafePhraseButton).setOnClickListener { configureSafePhrase() }
+        root.findViewById<MaterialButton>(R.id.testSafePhraseButton).setOnClickListener { testSafePhrase() }
 
         render()
         return root
@@ -125,6 +128,24 @@ class AutomationsFragment : Fragment() {
             now.get(Calendar.MINUTE),
             false
         ).show()
+    }
+
+    private fun testSafePhrase() {
+        val input = EditText(requireContext()).apply { hint = "Enter one of your SafePhrases" }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Local SafePhrase test")
+            .setView(input)
+            .setPositiveButton("Evaluate") { _, _ ->
+                val signal = SafePhraseEngine.evaluate(input.text.toString(), prefs.safePhrase())
+                val message = when (signal) {
+                    PhraseSignal.NONE -> "No safety signal detected."
+                    PhraseSignal.CHECK_ON_ME -> "Yellow signal: request a Guardian check-in."
+                    PhraseSignal.SILENT_ESCALATION -> "Red signal: silent escalation workflow would start."
+                }
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun configureSafePhrase() {
