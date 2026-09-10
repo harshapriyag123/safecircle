@@ -1,7 +1,10 @@
 package com.harshapriya.safecircle
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
@@ -17,6 +20,10 @@ class MainActivity : AppCompatActivity() {
     private val paywallLauncher by lazy { PaywallActivityLauncher(this) }
     private val customerCenterLauncher = registerForActivityResult(ShowCustomerCenter()) { }
 
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -24,6 +31,19 @@ class MainActivity : AppCompatActivity() {
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment)
         navView.setupWithNavController(navController)
+
+        requestSafetyPermissions()
+    }
+
+    private fun requestSafetyPermissions() {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions += Manifest.permission.POST_NOTIFICATIONS
+        }
+        permissionLauncher.launch(permissions.toTypedArray())
     }
 
     fun showProPaywall() {
