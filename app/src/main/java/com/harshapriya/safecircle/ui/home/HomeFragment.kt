@@ -7,12 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.harshapriya.safecircle.R
-import com.harshapriya.safecircle.model.SessionMode
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -29,6 +27,9 @@ class HomeFragment : Fragment() {
 
         root.findViewById<Button>(R.id.startSessionButton).setOnClickListener {
             findNavController().navigate(R.id.action_navigation_home_to_session_setup)
+        }
+        root.findViewById<Button>(R.id.toolkitButton).setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_home_to_toolkit)
         }
         root.findViewById<Button>(R.id.checkInButton).setOnClickListener { vm.checkIn() }
         root.findViewById<Button>(R.id.safeButton).setOnClickListener { vm.markSafe() }
@@ -49,17 +50,6 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         countdown?.cancel()
         super.onDestroyView()
-    }
-
-    private fun chooseMode() {
-        val modes = SessionMode.values()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Start a Safety Session")
-            .setItems(modes.map { it.label + " · " + it.minutes + " min" }.toTypedArray()) { _, which ->
-                vm.start(modes[which])
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
     }
 
     private fun render() {
