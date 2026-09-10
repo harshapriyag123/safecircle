@@ -1,0 +1,17 @@
+.git
+.github
+.gradle
+.idea
+**/build
+**/.DS_Store
+*.iml
+ios
+app
+gradle
+gradlew
+gradlew.bat
+settings.gradle.kts
+build.gradle.kts
+local.properties
+local.properties.example
+backend/tests
