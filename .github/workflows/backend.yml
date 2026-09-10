@@ -32,4 +32,5 @@ jobs:
       - name: Test API
         env:
           PYTHONPATH: .
+          SAFECIRCLE_ALLOW_DEMO_TOKEN: "true"
         run: pytest -q
