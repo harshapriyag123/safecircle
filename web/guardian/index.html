@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SafeCircle Guardian View</title>
+  <style>
+    :root{font-family:Inter,system-ui,sans-serif;background:#f3f7f6;color:#12211f}
+    body{margin:0;display:grid;place-items:center;min-height:100vh;padding:24px}
+    .shell{width:min(720px,100%);background:white;border-radius:28px;padding:28px;box-shadow:0 20px 70px #173d3918}
+    .brand{font-weight:800;font-size:28px;color:#173d39}
+    .pill{display:inline-block;padding:8px 12px;border-radius:999px;background:#e4f1ef;color:#315e58;font-weight:700}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:22px 0}
+    .card{background:#f7faf9;border-radius:18px;padding:18px}
+    .k{font-size:12px;color:#60716f;text-transform:uppercase;letter-spacing:.08em}
+    .v{font-size:20px;font-weight:750;margin-top:6px}
+    button{border:0;border-radius:16px;padding:15px 18px;font-weight:750;cursor:pointer}
+    .primary{background:#315e58;color:white}.secondary{background:#eef3f2;color:#173d39}
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    .privacy{margin-top:22px;padding:16px;border-left:4px solid #315e58;background:#f7faf9}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand">🛡️ SafeCircle</div>
+    <p class="pill">Guardian View · Demo</p>
+    <h1>Walk Home session</h1>
+    <p>Temporary session visibility. Precise location stays private unless the configured escalation threshold is reached.</p>
+    <section class="grid">
+      <div class="card"><div class="k">Status</div><div class="v">On schedule ✓</div></div>
+      <div class="card"><div class="k">Expected safe</div><div class="v">10:05 PM</div></div>
+      <div class="card"><div class="k">Last check-in</div><div class="v">1 min ago</div></div>
+      <div class="card"><div class="k">Battery</div><div class="v">72%</div></div>
+    </section>
+    <div class="actions">
+      <button class="primary" onclick="alert('Demo request sent')">Request check-in</button>
+      <button class="secondary" onclick="alert('Call action placeholder')">Call</button>
+    </div>
+    <div class="privacy"><strong>Privacy-first:</strong> this page is designed to expire with the Safety Session and reveal only user-authorized data.</div>
+  </main>
+</body>
+</html>
