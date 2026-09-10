@@ -19,6 +19,8 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     val snapshot: LiveData<SafetySnapshot> = _snapshot
 
     fun start(mode: SessionMode) = set(repo.startSession(mode))
+    fun start(mode: SessionMode, durationMinutes: Int, destinationLabel: String?) =
+        set(repo.startSession(mode, durationMinutes, destinationLabel))
     fun checkIn() = set(repo.checkIn())
     fun markSafe() = set(repo.markSafe())
     fun simulateConcern() = set(repo.simulateConcern())
