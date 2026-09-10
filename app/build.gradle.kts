@@ -61,4 +61,5 @@ dependencies {
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.work)
+    testImplementation(libs.junit)
 }
