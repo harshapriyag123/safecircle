@@ -75,32 +75,74 @@
     const q = new URLSearchParams(location.search);
     const get = (k, fallback) => q.get(k) || fallback;
 
-    const mode = get('mode', 'Walk Home').replaceAll('_',' ');
-    const status = get('state', 'NORMAL').replaceAll('_',' ');
-    const battery = get('battery', '72');
-    const eta = get('eta', '10:05 PM');
-    const checkin = get('checkin', '1 min ago');
-    const privacy = get('privacy', 'Escalation only');
+    function formatTime(ms) {
+      if (!ms) return '—';
+      return new Date(Number(ms)).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+    }
 
-    document.getElementById('title').textContent = mode + ' session';
-    document.getElementById('status').textContent = status === 'NORMAL' ? 'On schedule ✓' : status;
-    document.getElementById('battery').textContent = battery + '%';
-    document.getElementById('eta').textContent = eta;
-    document.getElementById('checkin').textContent = checkin;
-    document.getElementById('privacy').textContent = privacy;
+    function formatAgo(ms) {
+      if (!ms) return '—';
+      const minutes = Math.max(0, Math.round((Date.now() - Number(ms)) / 60000));
+      return minutes === 0 ? 'just now' : minutes + ' min ago';
+    }
 
-    if (['CONCERN','ESCALATED'].includes(status)) {
-      document.getElementById('statusCard').classList.add('danger');
+    function render(data) {
+      const mode = String(data.mode || 'Walk Home').replaceAll('_',' ');
+      const status = String(data.state || 'NORMAL').replaceAll('_',' ');
+      document.getElementById('title').textContent = mode + ' session';
+      document.getElementById('status').textContent = status === 'NORMAL' ? 'On schedule ✓' : status;
+      document.getElementById('battery').textContent =
+        data.battery_percent == null ? 'Private' : data.battery_percent + '%';
+      document.getElementById('eta').textContent =
+        data.expected_end_at ? formatTime(data.expected_end_at) : get('eta', '10:05 PM');
+      document.getElementById('checkin').textContent =
+        data.last_check_in_at ? formatAgo(data.last_check_in_at) : get('checkin', '1 min ago');
+      document.getElementById('privacy').textContent =
+        String(data.privacy_mode || get('privacy', 'Escalation only')).replaceAll('_',' ');
+
+      const card = document.getElementById('statusCard');
+      card.classList.toggle('danger', ['CONCERN','ESCALATED'].includes(status));
       document.getElementById('explain').textContent =
-        'A configured Safety Session condition changed. Review the session and follow the user-defined escalation plan.';
+        ['CONCERN','ESCALATED'].includes(status)
+          ? 'A configured Safety Session condition changed. Review the session and follow the user-defined escalation plan.'
+          : 'No unresolved session condition currently requires escalation.';
+    }
+
+    async function load() {
+      const token = q.get('token');
+      if (!token) {
+        render({
+          mode: get('mode','Walk Home'),
+          state: get('state','NORMAL'),
+          battery_percent: get('battery','72'),
+          privacy_mode: get('privacy','PRECISE_ON_ESCALATION')
+        });
+        return;
+      }
+
+      try {
+        const api = get('api', location.origin).replace(/\/$/, '');
+        const response = await fetch(api + '/v1/public/guardian/' + encodeURIComponent(token), {
+          headers: {'Accept':'application/json'}
+        });
+        if (!response.ok) throw new Error('Guardian link unavailable');
+        render(await response.json());
+      } catch (error) {
+        document.getElementById('status').textContent = 'Guardian link unavailable';
+        document.getElementById('explain').textContent =
+          'This link may be expired, revoked, or the SafeCircle backend may be unavailable.';
+        document.getElementById('statusCard').classList.add('danger');
+      }
     }
 
     function requestCheckIn(){
-      alert('Demo: check-in request queued. Production delivery uses the SafeCircleGateway notification adapter.');
+      alert('Guardian check-in request UI is ready; connect your delivery provider for production notifications.');
     }
     function callUser(){
-      alert('Demo: open the trusted contact call action on a connected deployment.');
+      alert('Open the trusted contact call action on a connected deployment.');
     }
+
+    load();
   </script>
 </body>
 </html>
