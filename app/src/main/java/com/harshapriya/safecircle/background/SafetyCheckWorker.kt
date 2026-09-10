@@ -34,11 +34,22 @@ class SafetyCheckWorker(
             else -> "Safety Capsule release threshold reached for this session."
         }
 
-        NotificationService(applicationContext).show(
-            (session.id.hashCode() + stage).toInt(),
-            "SafeCircle · ${snapshot.state.name}",
-            message
-        )
+        val notifier = NotificationService(applicationContext)
+        val notificationId = (session.id.hashCode() + stage).toInt()
+        if (stage == 0L) {
+            notifier.showCheckIn(
+                notificationId,
+                "SafeCircle · ${snapshot.state.name}",
+                message,
+                session.id
+            )
+        } else {
+            notifier.show(
+                notificationId,
+                "SafeCircle · ${snapshot.state.name}",
+                message
+            )
+        }
         AuditLog(applicationContext).append(
             AuditEvent(System.currentTimeMillis(), "ESCALATION_STAGE", session.id, "stage=$stage state=${snapshot.state}")
         )
