@@ -3,10 +3,13 @@ package com.harshapriya.safecircle.auth
 import android.content.Context
 import java.util.UUID
 
-class AccountRepository(context: Context) {
+class AccountRepository(private val context: Context) {
     private val prefs = context.getSharedPreferences("safecircle_account", Context.MODE_PRIVATE)
 
     fun stableUserId(): String {
+        val signedIn = AuthRepository(context).state()?.userId
+        if (signedIn != null) return signedIn
+
         val existing = prefs.getString("user_id", null)
         if (existing != null) return existing
         val created = "sc_" + UUID.randomUUID().toString()
