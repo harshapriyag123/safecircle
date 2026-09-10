@@ -100,6 +100,13 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="12dp"
                     android:text="Configure SafePhrase" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/testSafePhraseButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Test SafePhrase locally" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
