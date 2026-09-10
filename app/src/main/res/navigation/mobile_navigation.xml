@@ -3,7 +3,29 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mobile_navigation"
     app:startDestination="@+id/navigation_home">
-    <fragment android:id="@+id/navigation_home" android:name="com.harshapriya.safecircle.ui.home.HomeFragment" android:label="@string/title_home" />
-    <fragment android:id="@+id/navigation_circle" android:name="com.harshapriya.safecircle.ui.circle.CircleFragment" android:label="@string/title_circle" />
-    <fragment android:id="@+id/navigation_profile" android:name="com.harshapriya.safecircle.ui.profile.ProfileFragment" android:label="@string/title_profile" />
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.harshapriya.safecircle.ui.home.HomeFragment"
+        android:label="@string/title_home" />
+
+    <fragment
+        android:id="@+id/navigation_automations"
+        android:name="com.harshapriya.safecircle.ui.automations.AutomationsFragment"
+        android:label="@string/title_automations" />
+
+    <fragment
+        android:id="@+id/navigation_circle"
+        android:name="com.harshapriya.safecircle.ui.circle.CircleFragment"
+        android:label="@string/title_circle" />
+
+    <fragment
+        android:id="@+id/navigation_vault"
+        android:name="com.harshapriya.safecircle.ui.vault.VaultFragment"
+        android:label="@string/title_vault" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.harshapriya.safecircle.ui.profile.ProfileFragment"
+        android:label="@string/title_profile" />
 </navigation>
