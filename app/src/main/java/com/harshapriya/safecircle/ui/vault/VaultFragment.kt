@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.button.MaterialButton
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.history.SafetyHistoryRepository
 import com.harshapriya.safecircle.model.SafetyCapsuleFactory
 import com.harshapriya.safecircle.privacy.LocationPrivacyMode
 import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
@@ -112,5 +113,12 @@ class VaultFragment : Fragment() {
         root.findViewById<TextView>(R.id.auditPreview).text =
             if (audit.isEmpty()) "No safety events yet."
             else audit.joinToString("\n") { "• " + it.type + " · " + it.details }
+
+        val history = SafetyHistoryRepository(requireContext()).all().take(6)
+        root.findViewById<TextView>(R.id.historyPreview).text =
+            if (history.isEmpty()) "No Safety Session history yet."
+            else history.joinToString("\n") {
+                "• " + it.mode.replace('_', ' ') + " · " + it.outcome
+            }
     }
 }
