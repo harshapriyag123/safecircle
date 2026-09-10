@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/surface_soft">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HACKATHON DEMO" android:textColor="@color/brand" android:textSize="12sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Judge Mode" android:textColor="@color/ink" android:textSize="34sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="A deterministic story you can repeat live without waiting for timers or real danger conditions." android:textColor="@color/muted" android:textSize="15sp" />
+
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" app:cardCornerRadius="26dp" app:cardBackgroundColor="@color/brand_dark" app:cardElevation="0dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="22dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="LIVE SCENARIO" android:textColor="@color/brand_lime" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/judgeStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Ready" android:textColor="@android:color/white" android:textSize="22sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Story: Walk Home → check-in state → concern → Guardian escalation → safe resolution" android:textColor="#C9DED6" />
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="1 · Seed the story" android:textColor="@color/ink" android:textSize="20sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Creates a 12-minute Walk Home session, demo Family Circle, privacy settings, and Emergency Profile." android:textColor="@color/muted" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/judgeSeedButton" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="10dp" android:text="Seed judge demo" />
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="2 · Trigger concern" android:textColor="@color/ink" android:textSize="20sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Simulates missed check-in, route deviation, and low battery so the explainable Safety Engine changes state." android:textColor="@color/muted" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/judgeConcernButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="10dp" android:text="Simulate concern" />
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="3 · Resolve safely" android:textColor="@color/ink" android:textSize="20sp" android:textStyle="bold" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Closes the session, cancels scheduled checks, records history, and ends temporary sharing." android:textColor="@color/muted" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/judgeResolveButton" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="10dp" android:text="Resolve as safe" app:backgroundTint="@color/brand_dark" />
+
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" app:cardCornerRadius="22dp" app:cardBackgroundColor="@color/brand_mint" app:cardElevation="0dp">
+      <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="18dp" android:text="Judge talking point: SafeCircle does not claim to predict danger. It reacts to observable session conditions and the user's configured escalation plan." android:textColor="@color/ink" android:textStyle="bold" />
+    </com.google.android.material.card.MaterialCardView>
+  </LinearLayout>
+</ScrollView>
