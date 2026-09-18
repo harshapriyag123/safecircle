@@ -1,10 +1,13 @@
 package com.harshapriya.safecircle.ui.circle
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -19,6 +22,10 @@ import com.harshapriya.safecircle.billing.SubscriptionManager
 import com.harshapriya.safecircle.family.FamilyCircleRepository
 import com.harshapriya.safecircle.guardian.GuardianInviteCoordinator
 import com.harshapriya.safecircle.guardian.GuardianInviteService
+import com.harshapriya.safecircle.guardian.GuardianJourneyActivity
+import com.harshapriya.safecircle.guardian.GuardianJourneyStatus
+import com.harshapriya.safecircle.guardian.GuardianRepository
+import com.harshapriya.safecircle.guardian.GuardianTimelineCoordinator
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -30,12 +37,22 @@ class CircleFragment : Fragment() {
     private lateinit var vm: SafetyViewModel
     private lateinit var familyRepo: FamilyCircleRepository
     private lateinit var inviteService: GuardianInviteService
+    private lateinit var guardianRepo: GuardianRepository
+    private val handler = Handler(Looper.getMainLooper())
+    private var refreshRunning = false
+    private val refreshGuardianActivity = object : Runnable {
+        override fun run() {
+            refreshActivity()
+            handler.postDelayed(this, 3_000L)
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         root = inflater.inflate(R.layout.fragment_circle, container, false)
         vm = ViewModelProvider(requireActivity())[SafetyViewModel::class.java]
         familyRepo = FamilyCircleRepository(requireContext())
         inviteService = GuardianInviteService(requireContext())
+        guardianRepo = GuardianRepository(requireContext())
 
         renderGuardians()
         renderFamily()
@@ -44,14 +61,22 @@ class CircleFragment : Fragment() {
 
         root.findViewById<MaterialButton>(R.id.addGuardianButton).setOnClickListener {
             val button = it as MaterialButton
+            val name = root.findViewById<EditText>(R.id.guardianNameInput).text.toString().trim()
+            if (name.length < 2) {
+                Toast.makeText(requireContext(), "Enter the Guardian's name first.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             button.isEnabled = false
             button.text = "Creating signed link…"
             viewLifecycleOwner.lifecycleScope.launch {
                 runCatching {
                     GuardianInviteCoordinator(requireContext()).createForActiveSession(ttlMinutes = 24 * 60)
                 }.onSuccess { invite ->
+                    guardianRepo.savePrimary(name)
                     inviteService.rememberUrl(invite.url)
                     renderShareLink(invite.url)
+                    renderGuardians()
+                    renderActivity(GuardianJourneyActivity(GuardianJourneyStatus.PENDING))
                     button.text = "Create another signed link"
                     Toast.makeText(requireContext(), "Guardian link created. Copy, share, or open it below.", Toast.LENGTH_LONG).show()
                 }.onFailure { error ->
@@ -91,6 +116,13 @@ class CircleFragment : Fragment() {
         super.onResume()
         vm.refresh()
         renderShareLink(inviteService.lastUrl())
+        handler.removeCallbacks(refreshGuardianActivity)
+        handler.post(refreshGuardianActivity)
+    }
+
+    override fun onPause() {
+        handler.removeCallbacks(refreshGuardianActivity)
+        super.onPause()
     }
 
     private fun requirePro(action: () -> Unit) {
@@ -107,7 +139,14 @@ class CircleFragment : Fragment() {
     private fun renderGuardians() {
         val list = root.findViewById<LinearLayout>(R.id.guardianList)
         list.removeAllViews()
-        vm.guardians().forEach { guardian ->
+        val guardians = vm.guardians()
+        if (guardians.isEmpty()) {
+            list.addView(TextView(requireContext()).apply {
+                text = "No Guardian saved yet. Add a real trusted contact before sharing this journey."
+            })
+            return
+        }
+        guardians.forEach { guardian ->
             val card = MaterialCardView(requireContext()).apply {
                 radius = 24f
                 cardElevation = 0f
@@ -119,6 +158,39 @@ class CircleFragment : Fragment() {
                 })
             }
             list.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 14 })
+        }
+    }
+
+    private fun refreshActivity() {
+        val session = vm.session.value ?: return renderActivity(GuardianJourneyActivity(GuardianJourneyStatus.NOT_SHARED))
+        val hasInvite = !inviteService.lastUrl().isNullOrBlank()
+        if (!hasInvite) {
+            return renderActivity(
+                GuardianJourneyActivity(if (session.resolved) GuardianJourneyStatus.RESOLVED else GuardianJourneyStatus.NOT_SHARED)
+            )
+        }
+        if (refreshRunning) return
+        refreshRunning = true
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching {
+                GuardianTimelineCoordinator(requireContext()).activity(session.id, session.resolved, hasInvite)
+            }.onSuccess(::renderActivity)
+                .onFailure { renderActivity(GuardianJourneyActivity(GuardianJourneyStatus.SYNC_FAILED)) }
+            refreshRunning = false
+        }
+    }
+
+    private fun renderActivity(activity: GuardianJourneyActivity) {
+        val time = activity.occurredAt?.let {
+            SimpleDateFormat("h:mm:ss a", Locale.getDefault()).format(Date(it))
+        }
+        root.findViewById<TextView>(R.id.guardianActivityStatus).text = when (activity.status) {
+            GuardianJourneyStatus.NOT_SHARED -> "Not shared · Create a signed link when your journey is active."
+            GuardianJourneyStatus.PENDING -> "Pending · Waiting for your Guardian to open the link."
+            GuardianJourneyStatus.ACKNOWLEDGED -> "Acknowledged${time?.let { " · $it" }.orEmpty()} · Your Guardian is watching."
+            GuardianJourneyStatus.CHECK_IN_REQUESTED -> "Check-in requested${time?.let { " · $it" }.orEmpty()} · Respond from Today."
+            GuardianJourneyStatus.RESOLVED -> "Resolved · Monitoring and Guardian actions have ended."
+            GuardianJourneyStatus.SYNC_FAILED -> "Sync failed · Status was not confirmed. Check your connection and retry."
         }
     }
 

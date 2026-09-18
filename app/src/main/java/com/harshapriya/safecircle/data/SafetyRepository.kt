@@ -4,6 +4,7 @@ import android.content.Context
 import com.harshapriya.safecircle.background.SafetyScheduler
 import com.harshapriya.safecircle.background.SyncScheduler
 import com.harshapriya.safecircle.history.SafetyHistoryRepository
+import com.harshapriya.safecircle.guardian.GuardianRepository
 import com.harshapriya.safecircle.model.Guardian
 import com.harshapriya.safecircle.model.SafetySession
 import com.harshapriya.safecircle.model.SafetyState
@@ -172,9 +173,5 @@ class SafetyRepository(private val context: Context) {
             .apply()
     }
 
-    fun guardians(): List<Guardian> = listOf(
-        Guardian("Primary Guardian", "Primary guardian", "Push + SMS", primary = true),
-        Guardian("Backup Guardian", "Backup guardian", "Push"),
-        Guardian("Family Circle", "Escalation group", "Push + call plan"),
-    )
+    fun guardians(): List<Guardian> = GuardianRepository(context).guardians()
 }

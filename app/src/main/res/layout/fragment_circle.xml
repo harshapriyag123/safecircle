@@ -24,7 +24,13 @@
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Guardians" android:textSize="18sp" android:textStyle="bold" />
         <LinearLayout android:id="@+id/guardianList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="10dp" />
 
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:hint="Guardian name">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/guardianNameInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textPersonName" android:maxLength="80" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <com.google.android.material.button.MaterialButton android:id="@+id/addGuardianButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="54dp" android:text="Create signed Guardian link" />
+
+        <TextView android:id="@+id/guardianActivityStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Not shared · Create a signed link when your journey is active." android:textStyle="bold" />
 
         <com.google.android.material.card.MaterialCardView android:id="@+id/shareLinkCard" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="22dp" app:cardElevation="0dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">

@@ -2,6 +2,7 @@ package com.harshapriya.safecircle.sync
 
 import com.harshapriya.safecircle.reliability.DeliveryReceipt
 import com.harshapriya.safecircle.reliability.QueuedEvent
+import com.harshapriya.safecircle.model.OwnerTimelineEvent
 
 class LocalDemoGateway : SafeCircleGateway {
     override suspend fun upsertSession(payload: SessionSyncPayload): Boolean = true
@@ -34,4 +35,6 @@ class LocalDemoGateway : SafeCircleGateway {
 
     override suspend fun publishGuardianSnapshot(sessionId: String, payloadJson: String): String =
         "https://safecircle.app/session/$sessionId"
+
+    override suspend fun fetchSessionEvents(sessionId: String): List<OwnerTimelineEvent> = emptyList()
 }

@@ -1,6 +1,8 @@
 # SafeCircle Hackathon Demo
 
-Use this script for a reliable 3–4 minute judge walkthrough.
+Use this script for a protected-journey walkthrough that fits inside the two-minute submission video.
+
+Guardian acknowledgement and check-in requests are real persisted backend events. The missed check-in signal remains an explicitly labelled judge simulation so the sequence is reliable without waiting for the real ETA.
 
 ## 0. Before the demo
 
@@ -59,15 +61,19 @@ Return to **Today** and show:
 ## 5. Guardian experience — 35 seconds
 
 Open **Circle**:
-- show Primary and Backup Guardians;
+- enter the real Guardian's name and persist the contact;
 - show Guardian Live session summary;
-- create a signed Guardian link when the backend is configured;
-- open/share the Guardian Web experience.
+- create and share a signed Guardian link;
+- on the Guardian device, select **I'm watching**;
+- show **Acknowledged** and its server timestamp appear in Android;
+- on the Guardian device, select **Request check-in**;
+- show **Check-in requested** and its server timestamp appear in Android.
 
 Explain:
 - Guardian token is signed and expiring;
 - precise location is hidden until the configured privacy threshold;
 - Safety Capsule is withheld until escalation.
+- failed synchronization is displayed as failed, never as acknowledged.
 
 ## 6. Privacy story — 35 seconds
 

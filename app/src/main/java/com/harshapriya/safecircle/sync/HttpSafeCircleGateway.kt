@@ -2,6 +2,7 @@ package com.harshapriya.safecircle.sync
 
 import com.harshapriya.safecircle.reliability.DeliveryReceipt
 import com.harshapriya.safecircle.reliability.QueuedEvent
+import com.harshapriya.safecircle.model.OwnerTimelineEvent
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -129,6 +130,17 @@ class HttpSafeCircleGateway(
         return baseUrl + "/guardian/"
     }
 
+    override suspend fun fetchSessionEvents(sessionId: String): List<OwnerTimelineEvent> {
+        val response = get("/v1/sessions/" + sessionId + "/events")
+        val events = response.optJSONArray("events") ?: return emptyList()
+        return (0 until events.length()).mapNotNull { index ->
+            val item = events.optJSONObject(index) ?: return@mapNotNull null
+            val type = item.optString("event_type")
+            if (type.isBlank()) return@mapNotNull null
+            OwnerTimelineEvent(type, item.optLong("created_at"))
+        }
+    }
+
     private fun parsePayload(raw: String): JSONObject {
         return runCatching { JSONObject(raw) }.getOrElse {
             JSONObject().put("raw", raw)
@@ -146,6 +158,26 @@ class HttpSafeCircleGateway(
             connection.setRequestProperty("Authorization", "Bearer " + bearerToken)
             connection.outputStream.use { it.write(json.toString().toByteArray(Charsets.UTF_8)) }
 
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) {
+                throw IllegalStateException("SafeCircle API HTTP " + code + ": " + text.take(240))
+            }
+            if (text.isBlank()) JSONObject() else JSONObject(text)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun get(path: String): JSONObject {
+        val connection = URL(baseUrl + path).openConnection() as HttpURLConnection
+        return try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 8_000
+            connection.readTimeout = 8_000
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("Authorization", "Bearer " + bearerToken)
             val code = connection.responseCode
             val stream = if (code in 200..299) connection.inputStream else connection.errorStream
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()

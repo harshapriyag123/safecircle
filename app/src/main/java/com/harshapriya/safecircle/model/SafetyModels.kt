@@ -34,6 +34,11 @@ data class Guardian(
     val primary: Boolean = false
 )
 
+data class OwnerTimelineEvent(
+    val type: String,
+    val createdAt: Long
+)
+
 data class SafetySnapshot(
     val score: Int,
     val state: SafetyState,

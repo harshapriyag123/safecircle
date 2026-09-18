@@ -11,12 +11,14 @@ import com.harshapriya.safecircle.sync.GuardianInviteLink
 import com.harshapriya.safecircle.sync.HttpSafeCircleGateway
 import com.harshapriya.safecircle.sync.NetworkConfig
 import com.harshapriya.safecircle.sync.SessionSyncPayload
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class GuardianInviteCoordinator(private val context: Context) {
     suspend fun createForActiveSession(
         role: String = "guardian",
         ttlMinutes: Int = 60
-    ): GuardianInviteLink {
+    ): GuardianInviteLink = withContext(Dispatchers.IO) {
         val auth = AuthRepository(context).state()
             ?: throw IllegalStateException("Sign in to SafeCircle before creating a real Guardian link.")
         if (!NetworkConfig.hasBackend) {
@@ -54,7 +56,7 @@ class GuardianInviteCoordinator(private val context: Context) {
             )
         )
 
-        return gateway.createGuardianInvite(
+        gateway.createGuardianInvite(
             sessionId = session.id,
             ownerId = auth.userId,
             role = role,

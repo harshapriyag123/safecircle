@@ -2,6 +2,7 @@ package com.harshapriya.safecircle.sync
 
 import com.harshapriya.safecircle.reliability.DeliveryReceipt
 import com.harshapriya.safecircle.reliability.QueuedEvent
+import com.harshapriya.safecircle.model.OwnerTimelineEvent
 
 /**
  * Contract for production cloud sync. Android code depends on this interface,
@@ -13,4 +14,5 @@ interface SafeCircleGateway {
     suspend fun upload(events: List<QueuedEvent>): List<String>
     suspend fun sendGuardianAlert(sessionId: String, recipientId: String, message: String): DeliveryReceipt
     suspend fun publishGuardianSnapshot(sessionId: String, payloadJson: String): String
+    suspend fun fetchSessionEvents(sessionId: String): List<OwnerTimelineEvent>
 }
