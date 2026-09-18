@@ -131,6 +131,20 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     else:
         result["safety_capsule"] = None
 
+    guardian_events = [
+        event
+        for event in db.list_events(session["id"], limit=50)
+        if event["event_type"] in {"GUARDIAN_ACKNOWLEDGED", "GUARDIAN_CHECK_IN_REQUESTED"}
+    ]
+    result["guardian_acknowledged_at"] = next(
+        (event["created_at"] for event in guardian_events if event["event_type"] == "GUARDIAN_ACKNOWLEDGED"),
+        None,
+    )
+    result["guardian_check_in_requested_at"] = next(
+        (event["created_at"] for event in guardian_events if event["event_type"] == "GUARDIAN_CHECK_IN_REQUESTED"),
+        None,
+    )
+
     return result
 
 

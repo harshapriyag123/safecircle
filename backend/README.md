@@ -24,7 +24,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn app.main:app --reload --port 8080
+uvicorn app.entrypoint:app --reload --port 8080
 ```
 
 ## Run with Docker
@@ -87,7 +87,7 @@ Before real-world use:
 - encrypt sensitive server-side fields;
 - run escalation in a durable job system;
 - integrate real push/SMS provider;
-- add delivery acknowledgement;
+- connect production push/SMS delivery receipts to the Guardian timeline;
 - rate-limit public and authenticated routes;
 - rotate signing keys;
 - add monitoring and alerting;

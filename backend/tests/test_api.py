@@ -8,7 +8,7 @@ os.environ["SAFECIRCLE_DB_PATH"] = "/tmp/safecircle-test.db"
 
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.entrypoint import app
 
 OWNER_HEADERS = {"Authorization": "Bearer test-owner-secret"}
 
@@ -87,6 +87,36 @@ def test_owner_can_check_in_and_resolve():
 
         current = client.get("/v1/sessions/" + session["id"], headers=OWNER_HEADERS)
         assert current.json()["resolved"] is True
+
+
+def test_guardian_can_acknowledge_and_request_check_in():
+    session = new_session()
+    with TestClient(app) as client:
+        assert client.post("/v1/sessions", json=session, headers=OWNER_HEADERS).status_code == 200
+        invite = client.post(
+            "/v1/guardian-invites",
+            json={
+                "session_id": session["id"],
+                "owner_id": session["owner_id"],
+                "role": "primary_guardian",
+                "ttl_minutes": 60,
+            },
+            headers=OWNER_HEADERS,
+        )
+        token = invite.json()["guardian_token"]
+
+        acknowledged = client.post("/v1/public/guardian/" + token + "/acknowledge")
+        assert acknowledged.status_code == 200
+        assert acknowledged.json()["session"]["guardian_acknowledged_at"] is not None
+
+        requested = client.post("/v1/public/guardian/" + token + "/request-check-in")
+        assert requested.status_code == 200
+        assert requested.json()["session"]["guardian_check_in_requested_at"] is not None
+
+        timeline = client.get("/v1/sessions/" + session["id"] + "/events", headers=OWNER_HEADERS)
+        event_types = {event["event_type"] for event in timeline.json()["events"]}
+        assert "GUARDIAN_ACKNOWLEDGED" in event_types
+        assert "GUARDIAN_CHECK_IN_REQUESTED" in event_types
 
 
 def test_revenuecat_webhook_updates_subscription_mirror():

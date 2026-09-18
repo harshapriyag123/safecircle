@@ -10,7 +10,7 @@ os.environ["REVENUECAT_WEBHOOK_SECRET"] = "test-revenuecat-secret"
 os.environ["SAFECIRCLE_DB_PATH"] = "/tmp/safecircle-auth-test.db"
 
 from fastapi.testclient import TestClient
-from app.main import app
+from app.entrypoint import app
 
 
 def test_register_login_and_owner_authorization():

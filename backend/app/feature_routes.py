@@ -120,3 +120,19 @@ def guardian_acknowledge(token: str) -> dict[str, Any]:
         {"role": payload.get("role", "guardian")},
     )
     return {"ok": True, "session": public_snapshot(session, payload.get("role", "guardian"))}
+
+
+@router.post("/v1/public/guardian/{token}/request-check-in")
+def guardian_request_check_in(token: str) -> dict[str, Any]:
+    payload = guardian_token_or_401(token)
+    session = db.get_session(payload["session_id"])
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if bool(session["resolved"]):
+        raise HTTPException(status_code=409, detail="Resolved sessions are read-only")
+    db.append_event(
+        session["id"],
+        "GUARDIAN_CHECK_IN_REQUESTED",
+        {"role": payload.get("role", "guardian")},
+    )
+    return {"ok": True, "session": public_snapshot(session, payload.get("role", "guardian"))}
