@@ -114,6 +114,8 @@ def guardian_acknowledge(token: str) -> dict[str, Any]:
     session = db.get_session(payload["session_id"])
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if bool(session["resolved"]):
+        raise HTTPException(status_code=409, detail="Resolved sessions are read-only")
     db.append_event(
         session["id"],
         "GUARDIAN_ACKNOWLEDGED",

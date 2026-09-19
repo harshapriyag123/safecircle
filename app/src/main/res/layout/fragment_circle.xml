@@ -31,6 +31,7 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/addGuardianButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="54dp" android:text="Create signed Guardian link" />
 
         <TextView android:id="@+id/guardianActivityStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Not shared · Create a signed link when your journey is active." android:textStyle="bold" />
+        <TextView android:id="@+id/ownerTimeline" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Timeline pending · Server events will appear here." android:textColor="@color/muted" android:lineSpacingExtra="3dp" />
 
         <com.google.android.material.card.MaterialCardView android:id="@+id/shareLinkCard" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" app:cardCornerRadius="22dp" app:cardElevation="0dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">

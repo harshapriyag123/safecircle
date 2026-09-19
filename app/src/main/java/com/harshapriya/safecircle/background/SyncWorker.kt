@@ -38,7 +38,7 @@ class SyncWorker(
             val session = repo.currentSession()
             if (session != null) {
                 val snapshot = SafetyEngine.evaluate(session)
-                val location = LocationProvider(applicationContext).lastKnown()
+                val location = if (session.resolved) null else LocationProvider(applicationContext).lastKnown()
                 val privacy = SafetyPreferencesRepository(applicationContext).privacy()
 
                 gateway.upsertSession(
@@ -50,14 +50,14 @@ class SyncWorker(
                         startedAt = session.startedAt,
                         expectedEndAt = session.expectedEndAt,
                         lastCheckInAt = session.lastCheckInAt,
-                        state = snapshot.state.name,
+                        state = if (session.resolved) "RESOLVED" else snapshot.state.name,
                         batteryPercent = session.batteryPercent,
                         latitude = location?.latitude,
                         longitude = location?.longitude,
                         locationAccuracy = location?.accuracyMeters,
                         privacyMode = privacy.locationMode.name,
                         resolved = session.resolved,
-                        capsuleJson = SafetyCapsuleStore(applicationContext).get(session.id),
+                        capsuleJson = if (session.resolved) null else SafetyCapsuleStore(applicationContext).get(session.id),
                         resolvedAt = session.resolvedAt
                     )
                 )

@@ -101,6 +101,7 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
         "state": state,
         "battery_percent": session.get("battery_percent"),
         "resolved": bool(session["resolved"]),
+        "resolved_at": session.get("resolved_at"),
         "privacy_mode": privacy,
         "escalation_stage_minutes": stage,
         "role": role,
@@ -110,7 +111,9 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     lon = session.get("longitude")
     can_reveal_precise = state in {"CONCERN", "ESCALATED"} or (stage is not None and stage >= 15)
 
-    if privacy == "APPROXIMATE" and lat is not None and lon is not None:
+    if bool(session["resolved"]):
+        result["location"] = None
+    elif privacy == "APPROXIMATE" and lat is not None and lon is not None:
         result["location"] = {
             "latitude": round(float(lat), 2),
             "longitude": round(float(lon), 2),
@@ -290,8 +293,29 @@ def upsert_session(
 ) -> dict[str, Any]:
     user_id = auth_or_401(authorization)
     assert_owner(user_id, body.owner_id)
-    db.upsert_session(body.model_dump())
-    db.append_event(body.id, "SESSION_UPSERTED", {"state": body.state})
+    existing = db.get_session(body.id)
+    if existing is not None and existing["owner_id"] != body.owner_id:
+        raise HTTPException(status_code=403, detail="Session owner mismatch")
+    if existing is not None and bool(existing["resolved"]):
+        if not body.resolved:
+            raise HTTPException(status_code=409, detail="Resolved sessions cannot be reopened")
+        return {
+            "ok": True,
+            "session_id": body.id,
+            "already_resolved": True,
+            "resolved_at": existing.get("resolved_at"),
+        }
+
+    data = body.model_dump()
+    transitioned_to_resolved = body.resolved and not bool(existing and existing["resolved"])
+    if body.resolved:
+        data["state"] = "RESOLVED"
+        data["resolved_at"] = body.resolved_at or now_ms()
+    db.upsert_session(data)
+    if transitioned_to_resolved:
+        db.append_event(body.id, "SESSION_RESOLVED", {"source": "owner_sync"})
+    else:
+        db.append_event(body.id, "SESSION_UPSERTED", {"state": data["state"]})
     return {"ok": True, "session_id": body.id}
 
 
@@ -319,11 +343,20 @@ def patch_session(
     if current is None:
         raise HTTPException(status_code=404, detail="Session not found")
     assert_owner(user_id, current["owner_id"])
+    if bool(current["resolved"]):
+        raise HTTPException(status_code=409, detail="Resolved sessions are read-only")
 
     updates = body.model_dump(exclude_none=True)
+    resolving = updates.get("resolved") is True
+    if resolving:
+        updates["state"] = "RESOLVED"
+        updates["resolved_at"] = updates.get("resolved_at") or now_ms()
     current.update(updates)
     db.upsert_session(current)
-    db.append_event(session_id, "SESSION_UPDATED", {"fields": sorted(updates.keys())})
+    if resolving:
+        db.append_event(session_id, "SESSION_RESOLVED", {"source": "owner_patch"})
+    else:
+        db.append_event(session_id, "SESSION_UPDATED", {"fields": sorted(updates.keys())})
     return {"ok": True, "session": db.get_session(session_id)}
 
 
@@ -358,12 +391,15 @@ def resolve_session(
         raise HTTPException(status_code=404, detail="Session not found")
     assert_owner(user_id, session["owner_id"])
 
+    if bool(session["resolved"]):
+        return {"ok": True, "resolved_at": session.get("resolved_at")}
+
     session["resolved"] = True
     session["resolved_at"] = now_ms()
     session["state"] = "RESOLVED"
     db.upsert_session(session)
     db.append_event(session_id, "SESSION_RESOLVED", {"source": "owner"})
-    return {"ok": True}
+    return {"ok": True, "resolved_at": session["resolved_at"]}
 
 
 @app.get("/v1/sessions/{session_id}/events")
@@ -414,6 +450,8 @@ def create_guardian_invite(
     if session["owner_id"] != body.owner_id:
         raise HTTPException(status_code=403, detail="Owner mismatch")
     assert_owner(user_id, body.owner_id)
+    if bool(session["resolved"]):
+        raise HTTPException(status_code=409, detail="Resolved sessions cannot be shared")
 
     invite_id = str(uuid.uuid4())
     expires_at = now_ms() + body.ttl_minutes * 60_000

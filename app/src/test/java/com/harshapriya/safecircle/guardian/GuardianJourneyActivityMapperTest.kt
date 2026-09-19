@@ -29,8 +29,16 @@ class GuardianJourneyActivityMapperTest {
     @Test
     fun resolvedSessionCannotAppearActive() {
         val activity = GuardianJourneyActivityMapper.map(
-            listOf(OwnerTimelineEvent("GUARDIAN_CHECK_IN_REQUESTED", 200L)), true, true
+            listOf(
+                OwnerTimelineEvent("SESSION_RESOLVED", 300L),
+                OwnerTimelineEvent("GUARDIAN_CHECK_IN_REQUESTED", 200L),
+                OwnerTimelineEvent("GUARDIAN_ACKNOWLEDGED", 100L),
+            ), true, true
         )
         assertEquals(GuardianJourneyStatus.RESOLVED, activity.status)
+        assertEquals(
+            listOf("GUARDIAN_ACKNOWLEDGED", "GUARDIAN_CHECK_IN_REQUESTED", "SESSION_RESOLVED"),
+            activity.timeline.map { it.type }
+        )
     }
 }

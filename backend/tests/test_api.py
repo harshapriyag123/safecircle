@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 os.environ["SAFECIRCLE_API_SECRET"] = "test-owner-secret"
@@ -9,6 +10,7 @@ os.environ["SAFECIRCLE_DB_PATH"] = "/tmp/safecircle-test.db"
 from fastapi.testclient import TestClient
 
 from app.entrypoint import app
+from app.security import sign_guardian_token
 
 OWNER_HEADERS = {"Authorization": "Bearer test-owner-secret"}
 
@@ -117,6 +119,146 @@ def test_guardian_can_acknowledge_and_request_check_in():
         event_types = {event["event_type"] for event in timeline.json()["events"]}
         assert "GUARDIAN_ACKNOWLEDGED" in event_types
         assert "GUARDIAN_CHECK_IN_REQUESTED" in event_types
+
+
+def test_guardian_observes_terminal_resolution_and_sensitive_data_is_withdrawn():
+    session = new_session()
+    now = int(time.time() * 1000)
+    session.update(
+        {
+            "started_at": now - 45 * 60_000,
+            "expected_end_at": now - 16 * 60_000,
+            "last_check_in_at": now - 20 * 60_000,
+        }
+    )
+    with TestClient(app) as client:
+        assert client.post("/v1/sessions", json=session, headers=OWNER_HEADERS).status_code == 200
+        invite = client.post(
+            "/v1/guardian-invites",
+            json={
+                "session_id": session["id"],
+                "owner_id": session["owner_id"],
+                "role": "primary_guardian",
+                "ttl_minutes": 60,
+            },
+            headers=OWNER_HEADERS,
+        ).json()
+        token = invite["guardian_token"]
+
+        before = client.get("/v1/public/guardian/" + token)
+        assert before.status_code == 200
+        assert before.json()["location"]["precision"] == "precise_on_escalation"
+        assert before.json()["safety_capsule"] == {"instruction": "Call me first"}
+
+        assert client.post("/v1/public/guardian/" + token + "/acknowledge").status_code == 200
+        assert client.post("/v1/public/guardian/" + token + "/request-check-in").status_code == 200
+
+        resolved_at = now + 1_000
+        resolved_payload = {
+            **session,
+            "state": "CONCERN",
+            "resolved": True,
+            "resolved_at": resolved_at,
+            "latitude": None,
+            "longitude": None,
+            "location_accuracy": None,
+            "capsule": None,
+        }
+        resolved = client.post("/v1/sessions", json=resolved_payload, headers=OWNER_HEADERS)
+        assert resolved.status_code == 200
+
+        public = client.get("/v1/public/guardian/" + token)
+        assert public.status_code == 200
+        body = public.json()
+        assert body["resolved"] is True
+        assert body["state"] == "RESOLVED"
+        assert body["resolved_at"] == resolved_at
+        assert body["location"] is None
+        assert body["safety_capsule"] is None
+
+        assert client.post("/v1/public/guardian/" + token + "/acknowledge").status_code == 409
+        assert client.post("/v1/public/guardian/" + token + "/request-check-in").status_code == 409
+        assert client.post(
+            "/v1/guardian-invites",
+            json={
+                "session_id": session["id"],
+                "owner_id": session["owner_id"],
+                "role": "guardian",
+                "ttl_minutes": 60,
+            },
+            headers=OWNER_HEADERS,
+        ).status_code == 409
+        assert client.patch(
+            "/v1/sessions/" + session["id"],
+            json={"state": "NORMAL"},
+            headers=OWNER_HEADERS,
+        ).status_code == 409
+
+        stale = {**session, "resolved": False, "resolved_at": None}
+        assert client.post("/v1/sessions", json=stale, headers=OWNER_HEADERS).status_code == 409
+
+        repeated = client.post("/v1/sessions", json=resolved_payload, headers=OWNER_HEADERS)
+        assert repeated.status_code == 200
+        assert repeated.json()["already_resolved"] is True
+
+        events = client.get(
+            "/v1/sessions/" + session["id"] + "/events",
+            headers=OWNER_HEADERS,
+        ).json()["events"]
+        relevant = [
+            event for event in events
+            if event["event_type"] in {
+                "GUARDIAN_ACKNOWLEDGED",
+                "GUARDIAN_CHECK_IN_REQUESTED",
+                "SESSION_RESOLVED",
+            }
+        ]
+        assert [event["event_type"] for event in relevant] == [
+            "SESSION_RESOLVED",
+            "GUARDIAN_CHECK_IN_REQUESTED",
+            "GUARDIAN_ACKNOWLEDGED",
+        ]
+        assert [event["created_at"] for event in relevant] == sorted(
+            [event["created_at"] for event in relevant], reverse=True
+        )
+        assert sum(event["event_type"] == "SESSION_RESOLVED" for event in events) == 1
+
+
+def test_expired_and_revoked_guardian_links_are_terminal():
+    expired = sign_guardian_token(
+        {
+            "invite_id": "expired-invite",
+            "session_id": "expired-session",
+            "role": "guardian",
+            "exp": int(time.time() * 1000) - 1,
+        }
+    )
+    session = new_session()
+    with TestClient(app) as client:
+        assert client.get("/v1/public/guardian/" + expired).status_code == 401
+        assert client.post("/v1/public/guardian/" + expired + "/acknowledge").status_code == 401
+
+        assert client.post("/v1/sessions", json=session, headers=OWNER_HEADERS).status_code == 200
+        invite = client.post(
+            "/v1/guardian-invites",
+            json={
+                "session_id": session["id"],
+                "owner_id": session["owner_id"],
+                "role": "guardian",
+                "ttl_minutes": 60,
+            },
+            headers=OWNER_HEADERS,
+        ).json()
+        revoked = client.delete(
+            "/v1/guardian-invites/" + invite["invite_id"],
+            params={"owner_id": session["owner_id"]},
+            headers=OWNER_HEADERS,
+        )
+        assert revoked.status_code == 200
+        token = invite["guardian_token"]
+        assert client.get("/v1/public/guardian/" + token).status_code == 401
+        assert client.post("/v1/public/guardian/" + token + "/acknowledge").status_code == 401
+        assert client.post("/v1/public/guardian/" + token + "/request-check-in").status_code == 401
 
 
 def test_revenuecat_webhook_updates_subscription_mirror():

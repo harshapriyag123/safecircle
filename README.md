@@ -528,9 +528,9 @@ FastAPI backend
 Trusted Guardian browser
 ```
 
-The backend has its own CI workflow and tests for health, owner session operations, Guardian privacy redaction, and RevenueCat webhook handling.
+The backend has its own CI workflow and tests for health, owner session operations, Guardian privacy redaction, resolved/expired/revoked Guardian behavior, and RevenueCat webhook handling. Guardian Live observes backend resolution automatically while visible and stops polling at terminal session states.
 
-> The remaining production integration boundary is **real user authentication + push/SMS delivery infrastructure**. The repository intentionally does not pretend those external services are connected without credentials.
+> The remaining production integration boundary is **push/SMS delivery plus managed production data infrastructure**. The repository intentionally does not pretend those external services are connected without credentials.
 
 ---
 

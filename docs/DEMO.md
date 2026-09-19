@@ -102,11 +102,11 @@ Open **Pro**:
 
 Explain that core check-in and basic safety remain available without Pro.
 
-## 8. Resolution — 15 seconds
+## 8. Two-device resolution — 15 seconds
 
-Open **System health** and tap **3 · Resolve as safe**.
+On the traveler device, tap **I'm safe**.
 
-Return to **Today** and show RESOLVED / completed session behavior.
+Keep Guardian Live visible: within five seconds it automatically changes to **Resolved · monitoring ended** without a reload. Show that both Guardian actions are disabled and that temporary location / Safety Capsule access is closed. Return to **Today** and show the ordered owner timeline containing Guardian acknowledgement, check-in request, and resolution.
 
 ## Judge-ready architecture proof
 

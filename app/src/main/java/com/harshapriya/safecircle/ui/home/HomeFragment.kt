@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.harshapriya.safecircle.R
+import com.harshapriya.safecircle.ui.shared.ResolutionSyncState
 import com.harshapriya.safecircle.ui.shared.SafetyViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -48,6 +49,7 @@ class HomeFragment : Fragment() {
 
         vm.session.observe(viewLifecycleOwner) { render() }
         vm.snapshot.observe(viewLifecycleOwner) { render() }
+        vm.resolutionSync.observe(viewLifecycleOwner) { render() }
         return root
     }
 
@@ -92,7 +94,11 @@ class HomeFragment : Fragment() {
             readiness.text = "—"
             stateView.text = "RESOLVED"
             val resolvedText = session.resolvedAt?.let { SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(it)) } ?: "recently"
-            summary.text = "Monitoring ended at $resolvedText. This session is read-only and remains in Safety History."
+            summary.text = when (vm.resolutionSync.value) {
+                ResolutionSyncState.SYNCING -> "You are safe. Ending shared Guardian monitoring…"
+                ResolutionSyncState.RETRYING -> "Safe on this device · Guardian update is pending and will retry when connected."
+                else -> "Monitoring ended at $resolvedText. This session is read-only and remains in Safety History."
+            }
             renderInactive("Last session resolved", "${session.mode.label}${session.destinationLabel?.let { " · $it" } ?: ""} · resolved $resolvedText")
             root.findViewById<TextView>(R.id.sessionCountdown).text = "Monitoring ended"
             return

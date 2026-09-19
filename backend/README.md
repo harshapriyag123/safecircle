@@ -47,13 +47,13 @@ The API documentation is then available at `/docs`.
 
 ## Authentication
 
-Owner endpoints use a hackathon bearer secret:
+Owner endpoints accept signed per-user access tokens issued by `/v1/auth/register` and `/v1/auth/login`. A shared hackathon bearer secret can be enabled explicitly for local demos with `SAFECIRCLE_ALLOW_DEMO_TOKEN=true`:
 
 ```http
 Authorization: Bearer <SAFECIRCLE_API_SECRET>
 ```
 
-This is deliberately simple for the demo. A production deployment should replace it with per-user authenticated identity, device/session revocation, and authorization checks.
+Production hardening still requires refresh-token rotation, device/session revocation, rate limiting, and an external identity/security review.
 
 Guardian access uses signed, expiring tokens. The database stores only the SHA-256 token hash.
 
@@ -66,6 +66,7 @@ Guardian responses are redacted according to `privacy_mode`:
 - `PRECISE_ON_ESCALATION` — exact coordinates only after the configured escalation state/threshold
 
 Safety Capsule data is returned only after the 15-minute escalation stage in this reference policy.
+After session resolution, Guardian responses always remove location and Safety Capsule data. Guardian Live polls only while visible, prevents overlapping requests, and stops permanently when the session resolves or the signed link expires or is revoked.
 
 ## RevenueCat
 
@@ -82,7 +83,7 @@ The backend mirrors whether `safecircle_pro` is active for demo/server-side feat
 
 Before real-world use:
 
-- replace shared owner bearer token with real auth;
+- add refresh-token rotation and device/session revocation to the signed user authentication flow;
 - move SQLite to managed PostgreSQL;
 - encrypt sensitive server-side fields;
 - run escalation in a durable job system;

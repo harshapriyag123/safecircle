@@ -186,7 +186,7 @@ def list_events(session_id: str, limit: int = 100) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT * FROM events WHERE session_id=?
-            ORDER BY created_at DESC LIMIT ?
+            ORDER BY created_at DESC, id DESC LIMIT ?
             """,
             (session_id, max(1, min(limit, 500))),
         ).fetchall()

@@ -164,9 +164,9 @@ class CircleFragment : Fragment() {
     private fun refreshActivity() {
         val session = vm.session.value ?: return renderActivity(GuardianJourneyActivity(GuardianJourneyStatus.NOT_SHARED))
         val hasInvite = !inviteService.lastUrl().isNullOrBlank()
-        if (!hasInvite) {
+        if (!hasInvite && !session.resolved) {
             return renderActivity(
-                GuardianJourneyActivity(if (session.resolved) GuardianJourneyStatus.RESOLVED else GuardianJourneyStatus.NOT_SHARED)
+                GuardianJourneyActivity(GuardianJourneyStatus.NOT_SHARED)
             )
         }
         if (refreshRunning) return
@@ -191,6 +191,24 @@ class CircleFragment : Fragment() {
             GuardianJourneyStatus.CHECK_IN_REQUESTED -> "Check-in requested${time?.let { " · $it" }.orEmpty()} · Respond from Today."
             GuardianJourneyStatus.RESOLVED -> "Resolved · Monitoring and Guardian actions have ended."
             GuardianJourneyStatus.SYNC_FAILED -> "Sync failed · Status was not confirmed. Check your connection and retry."
+        }
+        root.findViewById<TextView>(R.id.ownerTimeline).text = if (activity.timeline.isEmpty()) {
+            if (activity.status == GuardianJourneyStatus.SYNC_FAILED) {
+                "Timeline unavailable · No server events were substituted."
+            } else {
+                "Timeline pending · Server events will appear here."
+            }
+        } else {
+            activity.timeline.joinToString("\n") { event ->
+                val eventTime = SimpleDateFormat("h:mm:ss a", Locale.getDefault()).format(Date(event.createdAt))
+                val label = when (event.type) {
+                    "GUARDIAN_ACKNOWLEDGED" -> "Guardian acknowledged"
+                    "GUARDIAN_CHECK_IN_REQUESTED" -> "Guardian requested check-in"
+                    "SESSION_RESOLVED" -> "Traveler confirmed safe"
+                    else -> event.type.replace('_', ' ')
+                }
+                "$eventTime · $label"
+            }
         }
     }
 
