@@ -40,5 +40,8 @@ const {chromium}=require('playwright');
  await page.goto('http://127.0.0.1:8080/site/privacy.html');
  if(!(await page.title()).includes('Privacy'))throw Error('Privacy policy missing');
  if(failures.length)throw Error(failures.join('\n'));
+ await page.setViewportSize({width:1024,height:1024});
+ await page.goto('http://127.0.0.1:8080/site/assets/app-icon.svg');
+ await page.screenshot({path:'web/site/assets/app-icon-1024.png'});
  await browser.close();console.log('Desktop/mobile landing, simulated stages, signed Guardian acknowledgement/privacy/resolution, account deletion and no-token checks passed.');
 })();

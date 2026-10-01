@@ -12,7 +12,6 @@ import com.harshapriya.safecircle.platform.LocationProvider
 import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
 import com.harshapriya.safecircle.reliability.OfflineEventQueue
 import com.harshapriya.safecircle.sync.HttpSafeCircleGateway
-import com.harshapriya.safecircle.sync.LocalDemoGateway
 import com.harshapriya.safecircle.sync.NetworkConfig
 import com.harshapriya.safecircle.sync.SafeCircleGateway
 import com.harshapriya.safecircle.sync.SessionSyncPayload
@@ -28,12 +27,10 @@ class SyncWorker(
         return runCatching {
             val authToken = AuthRepository(applicationContext).state()?.accessToken
             val token = authToken ?: NetworkConfig.demoToken
-            val gateway: SafeCircleGateway =
-                if (NetworkConfig.hasBackend && token.isNotBlank()) {
-                    HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
-                } else {
-                    LocalDemoGateway()
-                }
+            // Keep offline events until a real authenticated gateway can acknowledge them.
+            // A local demonstration must never empty the production queue.
+            if (!NetworkConfig.hasBackend || token.isBlank()) return Result.success()
+            val gateway: SafeCircleGateway = HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
 
             val repo = SafetyRepository(applicationContext)
             val session = repo.currentSession()
