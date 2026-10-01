@@ -10,7 +10,7 @@ Checked October 1, 2026 against [official rules](https://revenuecat-shipaton-202
 | RevenueCat-powered in-app purchase | SDK, paywall, entitlement, restore and Customer Center implemented. Dashboard/store product configuration and live flow unverified. |
 | Project ID | `proj5f7132ef`, supplied dashboard screenshot. |
 | Public native demo video (YouTube/Vimeo), premium features early | Script below; actual native recording/upload pending. Keep video about two minutes and show premium before minute three. |
-| App icon and screenshots | Native icon resources exist. Website demo screenshot is captured from actual UI and labeled simulated. Export final native screenshots and 1024px icon to submission specifications; do not substitute a website screenshot for a native app screenshot. |
+| App icon and screenshots | 1024px icon exported from the native vector and attached to website CI. Website demo screenshot is captured from actual UI and labeled simulated. Native emulator screenshots and offline workflow verification are attached in `VERIFICATION.md`; prepare final submission dimensions; do not substitute a website screenshot for a native app screenshot. |
 | Written project story and relevant award responses | Explain actual implementation; describe pending verification honestly. No revenue/download/customer claims established. |
 | Testing access/promo if needed | CI debug APK exists. Play/App Store testing access and premium review access still need configuration. Demo does not prove a purchase. |
 | Next Gen exception | Conditional on active eligible student status, public source/demo and academic verification; guardian consent if a minor. User eligibility not confirmed. |

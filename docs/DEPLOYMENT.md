@@ -28,3 +28,5 @@ Consent removal cancels queued SMS jobs and is rechecked immediately before send
 ## Remaining operational safeguards
 
 Password-confirmed account deletion removes owned sessions, jobs, invites, events and mirror data, and tombstones the random account identifier to revoke all old tokens. Logout revokes the current token; access tokens have unique IDs. Persisted counters bound authentication to 10 and Guardian API requests to 120 per source address per minute. Only trusted reverse-proxy settings may establish source addresses; verify shared-proxy behavior in Railway. Refresh-token rotation and distributed multi-host rate limiting remain future hardening. Guardian links can be revoked. Before public account onboarding, verify gateway rate limits and establish a private provider/backup deletion support process; do not mistake production configuration validation for a security certification. Device background/permission tests, actual signed receipt tests and store purchase tests remain required.
+
+Android cloud backup is disabled to keep account tokens, Guardian contacts and local session data out of automatic device backups.

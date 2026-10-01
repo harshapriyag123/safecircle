@@ -1,0 +1,1 @@
+APK installed; app stayed running; startup background job registered; offline session started, checked in, extended and resolved. No purchase or external alert was attempted.
