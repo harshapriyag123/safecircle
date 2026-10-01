@@ -179,20 +179,25 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     return result
 
 
-async def escalation_loop(stop: asyncio.Event) -> None:
+async def worker_tick() -> None:
     from .delivery import schedule_escalations, process_delivery
+    current = now_ms()
+    for session in db.active_sessions():
+        schedule_escalations(session, current)
+    for _ in range(50):
+        if not await asyncio.to_thread(process_delivery, now_ms()):
+            break
+    db.purge_expired_capsules(current)
+    from .revenuecat import reconcile_pending
+    await asyncio.to_thread(reconcile_pending, current)
+    db.record_worker_tick(now_ms())
+
+
+async def escalation_loop(stop: asyncio.Event) -> None:
     import logging
     while not stop.is_set():
         try:
-            current = now_ms()
-            for session in db.active_sessions():
-                schedule_escalations(session, current)
-            for _ in range(50):
-                if not await asyncio.to_thread(process_delivery, now_ms()):
-                    break
-            db.purge_expired_capsules(current)
-            from .revenuecat import reconcile_pending
-            await asyncio.to_thread(reconcile_pending, current)
+            await worker_tick()
         except Exception:
             # A failed provider or malformed record must not kill the scheduler.
             logging.getLogger(__name__).exception("Escalation worker iteration failed")
@@ -208,12 +213,14 @@ async def lifespan(app: FastAPI):
     validate_production_config()
     db.init_db()
     stop = asyncio.Event()
-    task = asyncio.create_task(escalation_loop(stop))
+    external = os.getenv('SAFECIRCLE_WORKER_MODE') == 'external' or bool(os.getenv('VERCEL'))
+    task = None if external else asyncio.create_task(escalation_loop(stop))
     try:
         yield
     finally:
         stop.set()
-        await task
+        if task is not None:
+            await task
 
 
 app = FastAPI(

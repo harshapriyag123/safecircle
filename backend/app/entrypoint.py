@@ -58,5 +58,5 @@ async def lifecycle_consistency_guard(request: Request, call_next):
 
 @app.get("/", include_in_schema=False)
 def root() -> RedirectResponse:
-    """Send the public Railway domain to the public SafeCircle landing page."""
+    """Send the public deployment domain to the public SafeCircle landing page."""
     return RedirectResponse(url="/site/", status_code=307)

@@ -15,6 +15,12 @@ _lock = threading.Lock()
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
+    database_url = os.getenv('DATABASE_URL', '').strip()
+    if database_url:
+        from .postgres import Connection, open_connection
+        with open_connection(database_url, os.getenv('SAFECIRCLE_DB_SCHEMA', 'public')) as raw:
+            yield Connection(raw)
+        return
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -81,6 +87,9 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS delivery_jobs_due ON delivery_jobs(status,next_attempt_at);
             CREATE TABLE IF NOT EXISTS subscription_reconcile_jobs (
                 app_user_id TEXT PRIMARY KEY, generation INTEGER NOT NULL, next_attempt_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS worker_heartbeat (
+                id TEXT PRIMARY KEY, succeeded_at INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS revenuecat_receipts (
                 event_id TEXT PRIMARY KEY,
@@ -511,3 +520,15 @@ def get_delivery(job_id: str) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute("SELECT id,channel,status,provider_message_id FROM delivery_jobs WHERE id=?", (job_id,)).fetchone()
     return dict(row) if row else None
+
+
+def record_worker_tick(current: int) -> None:
+    with connect() as conn:
+        conn.execute("INSERT INTO worker_heartbeat VALUES('escalation',?) ON CONFLICT(id) "
+                     "DO UPDATE SET succeeded_at=excluded.succeeded_at", (current,))
+
+
+def worker_is_current(current: int) -> bool:
+    with connect() as conn:
+        row = conn.execute("SELECT succeeded_at FROM worker_heartbeat WHERE id='escalation'").fetchone()
+    return row is not None and 0 <= current - row['succeeded_at'] <= 90_000
