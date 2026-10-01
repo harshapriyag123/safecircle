@@ -8,3 +8,8 @@
 .cxx
 local.properties
 /.idea
+
+# Python backend test/build caches
+__pycache__/
+*.py[cod]
+.pytest_cache/

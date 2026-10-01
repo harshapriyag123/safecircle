@@ -54,7 +54,7 @@ class ClientEvent(BaseModel):
 
 
 class ClientEventBatch(BaseModel):
-    events: list[ClientEvent]
+    events: list[ClientEvent] = Field(max_length=500)
 
 
 class RevenueCatWebhookEnvelope(BaseModel):
