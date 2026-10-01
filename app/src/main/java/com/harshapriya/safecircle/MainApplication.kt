@@ -14,7 +14,9 @@ import com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener
 class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        Purchases.logLevel = LogLevel.DEBUG
+        SafetyCapsuleStore(this).purgeExpired()
+        SyncScheduler.ensureScheduled(this)
+        Purchases.logLevel = if (BuildConfig.DEBUG) LogLevel.DEBUG else LogLevel.WARN
 
         val key = Constants.revenueCatApiKey
         if (key.isBlank()) {
@@ -23,13 +25,13 @@ class MainApplication : Application() {
         }
 
         Purchases.configure(
-            PurchasesConfiguration.Builder(this, key).build()
+            PurchasesConfiguration.Builder(this, key).apply {
+                com.harshapriya.safecircle.auth.AuthRepository(this@MainApplication).state()?.userId?.let { appUserID(it) }
+            }.build()
         )
         Purchases.sharedInstance.updatedCustomerInfoListener = UpdatedCustomerInfoListener {
             SubscriptionManager.update(it)
         }
         SubscriptionManager.refresh()
-        SafetyCapsuleStore(this).purgeExpired()
-        SyncScheduler.ensureScheduled(this)
     }
 }

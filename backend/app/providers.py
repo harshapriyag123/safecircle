@@ -3,6 +3,7 @@ import json
 import os
 import urllib.parse
 import urllib.request
+import urllib.error
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,6 +14,7 @@ class DeliveryResult:
     accepted: bool
     provider_message_id: str | None = None
     error: str | None = None
+    ambiguous: bool = False
 
 
 class PushWebhookProvider:
@@ -78,8 +80,10 @@ class TwilioSmsProvider:
                     200 <= response.status < 300,
                     provider_message_id=payload.get("sid"),
                 )
-        except Exception as exc:
-            return DeliveryResult("twilio_sms", False, error=str(exc))
+        except urllib.error.HTTPError as exc:
+            return DeliveryResult("twilio_sms", False, error="http_" + str(exc.code))
+        except Exception:
+            return DeliveryResult("twilio_sms", False, error="outcome_unknown", ambiguous=True)
 
 
 def deliver_escalation(session: dict[str, Any], stage: int) -> list[DeliveryResult]:

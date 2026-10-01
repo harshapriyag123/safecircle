@@ -18,6 +18,8 @@ def validate_production_config() -> None:
     if "*" in os.getenv("SAFECIRCLE_ALLOWED_ORIGINS", ""):
         raise RuntimeError("Production CORS origins must be explicit")
     secrets = [os.environ[key] for key in required]
+    if os.getenv("SAFECIRCLE_PUSH_WEBHOOK_URL"):
+        secrets.append(os.environ["SAFECIRCLE_DELIVERY_RECEIPT_SECRET"])
     if len(set(secrets)) != len(secrets):
         raise RuntimeError('Production secrets must be independent')
     if os.getenv('SAFECIRCLE_ALLOW_DEMO_TOKEN', 'false').lower() == 'true':

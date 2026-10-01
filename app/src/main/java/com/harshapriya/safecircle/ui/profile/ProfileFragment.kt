@@ -241,6 +241,12 @@ class ProfileFragment : Fragment() {
             .setMessage("Store only information you intentionally want available to your safety workflow.")
             .setView(box)
             .setPositiveButton("Save") { _, _ ->
+                val phones = listOf(contact.text.toString().trim(), backup.text.toString().trim())
+                if (phones.any { it.isNotEmpty() && !Regex("^\\+[1-9][0-9]{7,14}$").matches(it) } ||
+                    (phones[0].isNotEmpty() && phones[0] == phones[1])) {
+                    Toast.makeText(requireContext(), "Use distinct phone numbers with +country code.", Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
                 emergencyRepo.save(
                     EmergencyProfile(
                         displayName = name.text.toString().trim(),

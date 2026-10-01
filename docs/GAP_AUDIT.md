@@ -1,42 +1,18 @@
-# SafeCircle implementation gap audit
+# SafeCircle gap audit — October 1, 2026
 
-Reviewed against commit `834d91c` on 2026-10-01. This is a source-code audit, not a certification of the live deployment or store accounts.
+PR #2 preserves PR #1's authorization, lifecycle, privacy, event retry and billing fixes. This audit distinguishes implementation from live verification.
 
-## Fixed in this change
-
-| Gap | Result |
-| --- | --- |
-| Any signed-in user could upload events to another owner's session | Validate ownership for every referenced session before writing a batch. Missing sessions return 404. |
-| Offline retries inserted duplicate events | Transactional receipts deduplicate by account and client event ID; retries are acknowledged so devices can clear the queue. |
-| Large batches were silently truncated | API validates the 500-event limit; Android flush retains excess events for the next sync. |
-| Subscription endpoint exposed other users' billing status | Require account ownership. Explicit local demo-token behavior remains supported. |
-| Cancellation/billing issues removed access before paid/grace periods ended | Keep access through the effective expiration, remove it on expiration/refund, support lifetime purchases, and ignore unrelated event types/entitlements. |
-| Delayed or repeated billing events could overwrite newer subscription state | Persist event timestamp and last event ID; ignore older/repeated updates atomically. Read-time expiration also handles delayed expiration webhooks. |
-| SMS escalation could not find the encrypted capsule contact | Decrypt active-session capsules before provider dispatch; remove raw database ciphertext from API records. |
-| PATCH ignored explicit null values | Allow owners to clear optional sensitive fields while rejecting nulls for required session fields. |
-| CONCERN released precise coordinates before escalation | Withhold precise coordinates until ESCALATED or the 15-minute server threshold. |
-| Expired capsules remained visible to Guardians | Withhold capsules whose expiresAt has passed. This does not yet delete the database record. |
-| Environment template contained literal backslash-n sequences | Restore separate configuration lines for auth and provider settings. |
-
-## Remaining work, ordered by impact
-
-| Priority | Gap and source evidence | Required follow-up |
+| Area | Implemented and checked | Remaining verification or work |
 | --- | --- | --- |
-| P0 | Escalation delivery only happens on the first persisted stage event (`backend/app/main.py`). Provider failures and missing credentials are recorded but are not retried. | Durable outbox/jobs with retry, resolution cancellation, provider idempotency, and delivery callbacks. |
-| P0 | Provider SMS selects only capsule.primaryContact regardless of stage (`backend/app/providers.py`). | Model verified Primary/Backup Guardian destinations and route each stage explicitly. Test real device delivery with consent and configured credentials. |
-| P0 | SQLite defaults to /tmp; encryption/signing have development fallback secrets. | Configure persistent storage, independent encryption/signing secrets, backups, and disable shared demo access on the deployment. Verify Railway settings directly. |
-| P1 | Late check-in resets the stored state but does not extend the overdue server escalation clock. Extended ETA uses the same per-session stage deduplication keys. | Define check-in grace and escalation generation/reset policy; test ETA extension and later missed check-ins. |
-| P1 | Capsule expiry redaction is implemented, but server retention/deletion is not. | Scheduled purge and explicit schema for capsule fields, privacy redaction, and expiration. |
-| P1 | Backend billing mirror is a single entitlement/product snapshot, not a complete subscriber history. Transfers, aliases, overlapping subscriptions, and equal-timestamp conflicting events need reconciliation. | Fetch authoritative RevenueCat subscriber state server-side when configured; retain event receipts/history and test these cases. |
-| P1 | iOS README explicitly leaves RevenueCat iOS wiring for later; some web app surfaces are local simulations. | Complete store-specific billing and exercise native/API flows on devices. Label simulated web features clearly. |
-| P1 | Auth has no refresh rotation, device revocation, or route rate limiting. | Add account/session controls and bounded authentication/public endpoint rate limits. |
-| P1 | No Gradle wrapper is checked in; this environment also has no Gradle/Android SDK. | Generate and commit a wrapper from trusted Gradle tooling; run Android CI and real-device background/permission tests. |
-| Launch | Public store listings, final pricing, beta usage, purchases, and campaign metrics are not established by the supplied evidence. | Supply real store/account evidence and measure adoption; do not describe simulated purchases as revenue. |
+| Ownership and offline events | Owner-scoped session/event/subscription APIs; transactional event deduplication; bounded batches; explicit-null PATCH handling | Production account/token management and rate limits need additional hardening. |
+| Durable safety delivery | SQLite outbox, per-deadline stage/role/channel deduplication, leased jobs, bounded retries, consented Primary/Backup contacts, resolution/ETA cancellation, authenticated receipts | Configure provider credentials, Guardian push adapter/device registration and persistent volume; exercise real delivery. Uncertain SMS outcomes await receipts to avoid duplicate retries. |
+| Check-in and ETA | Android/iOS/server check-ins ensure at least five minutes ahead; stale upserts cannot move deadline backwards; deadline changes cancel obsolete jobs | Real device background, offline/reconnect, permission and clock tests. |
+| Privacy | Guardian allowlist excludes raw contact/medical fields, precise coordinates withheld until authorized escalation, Status Only hides location, expired capsules purged, server expiry capped at 24h, completed job payload cleanup | Production storage/key/backup verification, private support and account deletion process. |
+| Free safety | Startup safety scheduler runs without RevenueCat key; basic privacy/session/multiple-Guardian controls are free | Validate user journeys on test devices; optional convenience paywalls must not block core safety. |
+| RevenueCat | Administrative project ID separated from credentials; native SDK/paywall/restore/Customer Center; authenticated identity; webhook ordering/deduplication; durable authoritative subscriber refresh including transfer/aliases | No account configuration access: actual offerings, store mappings, keys, pricing, purchase/restore/Customer Center, refunds and account-transfer tests remain unverified. |
+| Android reproducibility | Official generated Gradle 8.14.3 wrapper with distribution SHA; Java17/AGP8.13.2/Kotlin2.1.20/SDK36; CI unit tests, lint, debug APK/report artifacts | Final commit checks are tracked in VERIFICATION.md. Lint warnings remain; local Java network is blocked, so Android verification uses GitHub Actions. |
+| iOS billing | Pinned RevenueCat5.92.0; public Apple key build setting; SwiftUI paywall/restore/Customer Center; simulator build succeeds | Signed device/store testing, credentials and Android feature parity remain unverified/incomplete. iOS is a reference client. |
+| Public website | Landing, actual simulated-demo screenshot, Guardian demo clearly labeled, signed Guardian experience, privacy/support/testing instructions; mobile/browser CI | Railway connection confirmed, but no Railway callable tools appeared. Publishing this branch, persistent settings and public route verification remain blocked on deployment access. Native demo video pending. |
+| Shipaton | Official 2026 requirements reviewed; checklist, category assessment and two-minute native demo script | No qualifying store release, video, final native screenshot/icon exports, product verification or student eligibility evidence supplied. |
 
-## Verification
-
-Backend: `SAFECIRCLE_ALLOW_DEMO_TOKEN=true PYTHONPATH=. python -m pytest -q` from backend. 24 tests pass, including 16 new regression cases. Provider tests replace SMS delivery with a stub and send no real messages.
-
-`git diff --check` passes. Android execution could not run locally: no gradlew, Gradle installation, or Android SDK is available. Existing Android CI runs unit tests and assembles debug with its installed Gradle.
-
-The backend initializes new receipt storage and adds subscription event metadata to existing SQLite databases without deleting data. Deploy code and restart to apply this migration. These changes have not been applied to the live service.
+Backend regression tests use mocks and send no real notifications or purchases. Android/iOS build success is compilation evidence, not successful store billing or physical alert delivery. Website screenshot is a fictional demo, not a native screenshot or live session result. Do not claim downloads, revenue, customer feedback, publication or Shipaton readiness from these checks.

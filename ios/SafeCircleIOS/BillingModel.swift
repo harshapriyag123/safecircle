@@ -12,7 +12,7 @@ final class BillingModel: ObservableObject {
     init() {
         let key = (Bundle.main.object(forInfoDictionaryKey: "RevenueCatPublicSDKKey") as? String ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty, !key.contains("$(") else {
+        guard key.hasPrefix("appl_") || key.hasPrefix("test_") else {
             message = "Billing is not configured for this build. Basic safety remains available."
             return
         }

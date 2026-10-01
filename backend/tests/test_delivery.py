@@ -162,3 +162,34 @@ def test_missing_capsule_expiry_is_bounded(isolated_db):
     s['capsule'] = {'instruction': 'Call first'}
     db.upsert_session(s)
     assert db.get_session(s['id'])['capsule']['expiresAt'] <= now + 86_400_100
+
+
+def test_uncertain_sms_is_not_retried_after_interruption(isolated_db):
+    s, now = make_session()
+    job = db.enqueue_delivery(s, 5, 'primary', 'twilio_sms', {'phone': '+15555550111'}, now)
+    assert db.claim_delivery(now)['id'] == job
+    assert db.claim_delivery(now + 60_001) is None
+    assert db.get_delivery(job)['status'] == 'uncertain'
+    assert db.mark_delivery_receipt(job, True, now + 61_000)
+    assert db.get_delivery(job)['status'] == 'delivered'
+
+
+def test_twilio_receipt_requires_signature_and_matching_sid(isolated_db, monkeypatch):
+    import base64, hashlib, hmac
+    from urllib.parse import urlencode
+    s, now = make_session()
+    job = db.enqueue_delivery(s, 5, 'primary', 'twilio_sms', {'phone': '+15555550111'}, now)
+    db.claim_delivery(now)
+    db.finish_delivery(job, 'accepted', now, provider_message_id='SMexpected')
+    monkeypatch.setenv('TWILIO_AUTH_TOKEN', 'test-twilio-token')
+    monkeypatch.setenv('SAFECIRCLE_PUBLIC_BASE_URL', 'https://example.test')
+    path = '/v1/delivery-receipts/twilio/' + job
+    fields = {'MessageSid': 'SMexpected', 'MessageStatus': 'delivered'}
+    canonical = 'https://example.test' + path + ''.join(k + fields[k] for k in sorted(fields))
+    signature = base64.b64encode(hmac.new(b'test-twilio-token', canonical.encode(), hashlib.sha1).digest()).decode()
+    with TestClient(app) as client:
+        assert client.post(path, content=urlencode(fields)).status_code == 401
+        response = client.post(path, content=urlencode(fields), headers={'X-Twilio-Signature': signature,
+                                'Content-Type': 'application/x-www-form-urlencoded'})
+        assert response.status_code == 200
+        assert db.get_delivery(job)['status'] == 'delivered'

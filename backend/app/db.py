@@ -137,7 +137,7 @@ def upsert_session(data: dict[str, Any]) -> None:
         capsule = dict(capsule)
         limit = now + 24 * 60 * 60_000
         expiry = capsule.get('expiresAt')
-        capsule['expiresAt'] = min(expiry, limit) if isinstance(expiry, (int, float)) else limit
+        capsule['expiresAt'] = min(expiry, limit) if isinstance(expiry, (int, float)) and __import__('math').isfinite(expiry) else limit
     with _lock, connect() as conn:
         conn.execute(
             """
@@ -432,6 +432,10 @@ def enqueue_delivery(session: dict[str, Any], stage: int, role: str, channel: st
 def claim_delivery(current: int) -> dict[str, Any] | None:
     with _lock, connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
+        # SMS has no provider idempotency guarantee. An interrupted in-flight request
+        # must await its signed receipt rather than risk sending a duplicate.
+        conn.execute("UPDATE delivery_jobs SET status='uncertain',error='worker_interrupted',updated_at=? "
+                     "WHERE channel='twilio_sms' AND status='sending' AND lease_until<=?", (current, current))
         row = conn.execute("SELECT j.* FROM delivery_jobs j JOIN sessions s ON s.id=j.session_id "
                            "WHERE s.resolved=0 AND s.expected_end_at=j.deadline AND "
                            "((j.status='queued' AND j.next_attempt_at<=?) OR "
@@ -459,7 +463,7 @@ def finish_delivery(job_id: str, status: str, current: int, *, error: str | None
 
 def mark_delivery_receipt(job_id: str, delivered: bool, current: int) -> bool:
     with _lock, connect() as conn:
-        cur = conn.execute("UPDATE delivery_jobs SET status=?,updated_at=? WHERE id=? AND status IN ('accepted','sending')",
+        cur = conn.execute("UPDATE delivery_jobs SET status=?,updated_at=? WHERE id=? AND status IN ('accepted','sending','uncertain')",
                            ('delivered' if delivered else 'failed', current, job_id))
     return cur.rowcount > 0
 
@@ -483,7 +487,7 @@ def purge_expired_capsules(current: int) -> int:
                 count += 1
         # Payloads include contacts. Erase them from completed/obsolete jobs after 24h.
         conn.execute("UPDATE delivery_jobs SET payload_json=? WHERE status IN "
-                     "('delivered','failed','cancelled','accepted') AND updated_at<?",
+                     "('delivered','failed','cancelled','accepted','uncertain') AND updated_at<?",
                      (encrypt_json({}), current - 86_400_000))
     return count
 

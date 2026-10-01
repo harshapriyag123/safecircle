@@ -9,7 +9,10 @@ val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use(::load)
 }
-val revenueCatApiKey = localProperties.getProperty("REVENUECAT_API_KEY", "")
+val revenueCatApiKey = localProperties.getProperty("REVENUECAT_API_KEY", "").trim()
+require(revenueCatApiKey.isEmpty() || revenueCatApiKey.startsWith("goog_") || revenueCatApiKey.startsWith("test_")) {
+    "REVENUECAT_API_KEY must be an Android public SDK key; project IDs and secret keys cannot be embedded."
+}
 val safeCircleApiBaseUrl = localProperties.getProperty(
     "SAFECIRCLE_API_BASE_URL",
     "https://safecircle-production-5a32.up.railway.app"

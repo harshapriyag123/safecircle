@@ -20,7 +20,7 @@ import com.revenuecat.purchases.ui.revenuecatui.customercenter.ShowCustomerCente
 @OptIn(ExperimentalPreviewRevenueCatUIPurchasesAPI::class)
 class MainActivity : AppCompatActivity(), PaywallResultHandler {
     private lateinit var paywallLauncher: PaywallActivityLauncher
-    private val customerCenterLauncher = registerForActivityResult(ShowCustomerCenter()) { }
+    private val customerCenterLauncher = registerForActivityResult(ShowCustomerCenter()) { com.harshapriya.safecircle.billing.SubscriptionManager.refresh() }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()

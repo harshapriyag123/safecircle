@@ -56,10 +56,12 @@ def process_delivery(current: int) -> bool:
     try:
         result = send()
     except Exception:
-        db.finish_delivery(job['id'], 'failed' if job['attempts'] >= 4 else 'queued', current,
+        db.finish_delivery(job['id'], 'uncertain' if job['channel'] == 'twilio_sms' else ('failed' if job['attempts'] >= 4 else 'queued'), current,
                            error='provider_exception', next_attempt_at=current + 60_000)
         return True
-    if result.accepted:
+    if result.ambiguous:
+        db.finish_delivery(job['id'], 'uncertain', current, error='provider_outcome_unknown')
+    elif result.accepted:
         db.finish_delivery(job['id'], 'accepted', current, provider_message_id=result.provider_message_id)
     else:
         attempts = job['attempts'] + 1

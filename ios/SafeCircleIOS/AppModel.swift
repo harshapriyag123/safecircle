@@ -49,6 +49,7 @@ final class AppModel: ObservableObject {
         do {
             try await api.checkIn(session.id, token: auth.accessToken)
             self.session?.lastCheckInAt = Date()
+            self.session?.expectedEndAt = max(session.expectedEndAt, Date().addingTimeInterval(5 * 60))
             self.session?.state = "NORMAL"
             self.session?.batteryPercent = currentBatteryPercent()
             if let refreshed = self.session {

@@ -27,6 +27,7 @@ class AuthRepository(private val context: Context) {
 
     fun signOut() {
         prefs.edit().clear().apply()
+        com.harshapriya.safecircle.billing.SubscriptionManager.identify(null)
     }
 
     fun register(
@@ -96,6 +97,7 @@ class AuthRepository(private val context: Context) {
                 .putString("email", auth.email)
                 .putString("display_name", auth.displayName)
                 .apply()
+            com.harshapriya.safecircle.billing.SubscriptionManager.identify(auth.userId)
             auth
         } finally {
             connection.disconnect()
