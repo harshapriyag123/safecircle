@@ -17,5 +17,7 @@ data class SessionSyncPayload(
     val resolved: Boolean,
     val capsuleJson: String? = null,
     val resolvedAt: Long? = null,
-    val guardianContactsJson: String? = null
+    val guardianContactsJson: String? = null,
+    val shareBatteryOnEscalation: Boolean = false,
+    val shareDestinationOnEscalation: Boolean = false
 )

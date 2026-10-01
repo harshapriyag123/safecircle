@@ -12,6 +12,8 @@ ENTITLEMENT = 'safecircle_pro'
 
 def enqueue_reconciliation(customer: str, current: int) -> None:
     with db._lock, db.connect() as conn:
+        if conn.execute("SELECT 1 FROM deleted_accounts WHERE user_id=?", (customer,)).fetchone():
+            return
         conn.execute('INSERT INTO subscription_reconcile_jobs VALUES(?,?,?) ON CONFLICT(app_user_id) '
                      'DO UPDATE SET generation=subscription_reconcile_jobs.generation+1,next_attempt_at=excluded.next_attempt_at',
                      (customer, 1, current))

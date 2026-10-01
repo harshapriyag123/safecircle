@@ -107,6 +107,12 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
         "role": role,
     }
 
+    allow_details = not session["resolved"] and (state == "ESCALATED" or (stage is not None and stage >= 15))
+    if not allow_details or not session.get("share_battery_on_escalation"):
+        result["battery_percent"] = None
+    if not allow_details or not session.get("share_destination_on_escalation"):
+        result["destination"] = None
+
     lat = session.get("latitude")
     lon = session.get("longitude")
     can_reveal_precise = state == "ESCALATED" or (stage is not None and stage >= 15)
@@ -137,9 +143,24 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     if stage is not None and stage >= 15 and capsule_current:
         allowed = {"sessionId", "createdAt", "expiresAt", "destinationLabel", "batteryPercent", "destination", "battery", "instructions",
                    "guardianInstructions", "instruction"}
-        result["safety_capsule"] = {key: value for key, value in (capsule or {}).items() if key in allowed}
+        import math
+        numeric_fields = {'createdAt', 'expiresAt', 'battery', 'batteryPercent'}
+        result['safety_capsule'] = {
+            key: value for key, value in (capsule or {}).items() if key in allowed and (
+                (key in numeric_fields and isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value))
+                or (key not in numeric_fields and isinstance(value, str) and len(value) <= 2048)
+            )
+        }
     else:
         result["safety_capsule"] = None
+
+    if isinstance(result.get('safety_capsule'), dict):
+        for field in ('battery', 'batteryPercent'):
+            if not session.get('share_battery_on_escalation'):
+                result['safety_capsule'].pop(field, None)
+        for field in ('destination', 'destinationLabel'):
+            if not session.get('share_destination_on_escalation'):
+                result['safety_capsule'].pop(field, None)
 
     guardian_events = [
         event
@@ -305,6 +326,9 @@ def upsert_session(
         data["expected_end_at"] = max(data["expected_end_at"], existing["expected_end_at"])
         if body.last_check_in_at > existing["last_check_in_at"] and data["expected_end_at"] <= now_ms():
             data["expected_end_at"] = now_ms() + 5 * 60_000
+        for flag in ("share_battery_on_escalation", "share_destination_on_escalation"):
+            if flag not in body.model_fields_set:
+                data[flag] = existing.get(flag, False)
         if "guardian_contacts" not in body.model_fields_set:
             data["guardian_contacts"] = existing.get("guardian_contacts", [])
     transitioned_to_resolved = body.resolved and not bool(existing and existing["resolved"])
@@ -659,3 +683,24 @@ def request_subscription_reconciliation(app_user_id: str, authorization: str | N
     from .revenuecat import enqueue_reconciliation
     enqueue_reconciliation(app_user_id, now_ms())
     return {'queued': True}
+
+
+@app.post('/v1/auth/logout')
+def logout_account(authorization: str | None = Header(default=None)):
+    auth_or_401(authorization)
+    from .security import verify_access_token
+    from .account_controls import revoke
+    token = authorization.removeprefix('Bearer ').strip()
+    revoke(token, verify_access_token(token)['exp'])
+    return {'ok': True}
+
+
+@app.delete('/v1/account')
+def delete_owner_account(body: LoginRequest, authorization: str | None = Header(default=None)):
+    user_id = auth_or_401(authorization)
+    user = db.get_user(user_id)
+    if not user or user['email'] != body.email.strip().lower() or not verify_password(body.password, user['password_hash']):
+        raise HTTPException(status_code=401, detail='Reauthentication required')
+    from .account_controls import delete_account
+    delete_account(user_id)
+    return {'deleted': True, 'subscription_notice': 'Deleting SafeCircle data does not cancel a store subscription. Manage it in the store or Customer Center.'}

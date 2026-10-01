@@ -6,6 +6,8 @@ struct ProView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var createAccount = false
+    @State private var showDelete = false
+    @State private var deletePassword = ""
     @State private var showPaywall = false
     @State private var showCustomerCenter = false
 
@@ -13,12 +15,13 @@ struct ProView: View {
         NavigationStack {
             Form {
                 Section("SafeCircle+") {
-                    Text("Advanced automations, multiple Guardians, Family Circles, SafePhrase workflows, and richer privacy controls.")
+                    Text("Optional Android convenience tools use SafeCircle+. Core sessions, both Guardians and privacy remain free. The iOS client currently provides billing and basic sessions; advanced feature parity is pending.")
                 }
                 Section("Account") {
                     if let auth = model.auth {
                         Text(auth.userId).font(.caption)
-                        Button("Sign out") { model.auth = nil }
+                        Button("Sign out") { Task { try? await model.api.logout(token: auth.accessToken); model.auth = nil; model.session = nil } }
+                        Button("Delete account", role: .destructive) { showDelete = true }
                     } else {
                         TextField("Email", text: $email).textInputAutocapitalization(.never)
                         SecureField("Password", text: $password)
@@ -42,7 +45,22 @@ struct ProView: View {
                     BillingControls(billing: model.billing, showPaywall: $showPaywall,
                                     showCustomerCenter: $showCustomerCenter)
                 }
+                if let message = model.message { Section { Text(message) } }
             }.navigationTitle("SafeCircle+")
+                .alert("Delete SafeCircle account?", isPresented: $showDelete) {
+                    SecureField("Current password", text: $deletePassword)
+                    Button("Delete account", role: .destructive) {
+                        Task {
+                            guard let auth = model.auth else { return }
+                            do {
+                                try await model.api.deleteAccount(email: email, password: deletePassword, token: auth.accessToken)
+                                model.auth = nil; model.session = nil; password = ""; deletePassword = ""
+                                model.message = "Account deleted. Store subscriptions must be cancelled separately."
+                            } catch { model.message = error.localizedDescription }
+                        }
+                    }
+                    Button("Cancel", role: .cancel) { deletePassword = "" }
+                } message: { Text("Deletes SafeCircle data and pending monitoring. This does not cancel a store subscription or recall sent alerts.") }
                 .sheet(isPresented: $showPaywall, onDismiss: { Task { await model.billing.refresh() } }) {
                     PaywallView(displayCloseButton: true)
                 }

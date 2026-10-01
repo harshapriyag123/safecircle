@@ -57,6 +57,8 @@ class SyncWorker(
                         longitude = location?.longitude,
                         locationAccuracy = location?.accuracyMeters,
                         privacyMode = privacy.locationMode.name,
+                        shareBatteryOnEscalation = privacy.shareBatteryOnEscalation,
+                        shareDestinationOnEscalation = privacy.shareDestinationOnEscalation,
                         resolved = session.resolved,
                         guardianContactsJson = EmergencyProfileRepository(applicationContext).deliveryContactsJson(),
                         capsuleJson = if (session.resolved) null else SafetyCapsuleStore(applicationContext).get(session.id),

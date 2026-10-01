@@ -12,6 +12,13 @@ app.include_router(feature_router)
 async def lifecycle_consistency_guard(request: Request, call_next):
     """Protect lifecycle invariants even when an older client sends stale state."""
     path = request.url.path
+    from .account_controls import allow_request
+    import time
+    group = "auth" if path in {"/v1/auth/login", "/v1/auth/register"} else ("guardian" if path.startswith("/v1/public/guardian/") else None)
+    if group:
+        identity = (request.client.host if request.client else "unknown") + ":" + group
+        if not allow_request(identity, int(time.time()), 10 if group == "auth" else 120):
+            return JSONResponse(status_code=429, content={"detail": "Too many requests; retry later"}, headers={"Retry-After": "60"})
 
     if request.method == "POST" and path.startswith("/v1/sessions/") and path.endswith("/check-in"):
         session_id = path.removeprefix("/v1/sessions/").removesuffix("/check-in").strip("/")

@@ -193,3 +193,29 @@ def test_twilio_receipt_requires_signature_and_matching_sid(isolated_db, monkeyp
                                 'Content-Type': 'application/x-www-form-urlencoded'})
         assert response.status_code == 200
         assert db.get_delivery(job)['status'] == 'delivered'
+
+
+def test_battery_destination_consent_applies_to_all_guardian_fields(isolated_db):
+    s, now = make_session()
+    s.update(expected_end_at=now - 16 * 60_000, battery_percent=78, destination='Private address',
+             capsule={'expiresAt': now + 60_000, 'batteryPercent': 78, 'destinationLabel': 'Private address', 'instruction': 'Call first'})
+    db.upsert_session(s)
+    redacted = public_snapshot(db.get_session(s['id']), 'primary')
+    assert redacted['battery_percent'] is None and redacted['destination'] is None
+    assert set(redacted['safety_capsule']) == {'expiresAt', 'instruction'}
+    s.update(share_battery_on_escalation=True, share_destination_on_escalation=True)
+    db.upsert_session(s)
+    allowed = public_snapshot(db.get_session(s['id']), 'backup')
+    assert allowed['battery_percent'] == 78 and allowed['destination'] == 'Private address'
+    s['resolved'] = True
+    db.upsert_session(s)
+    closed = public_snapshot(db.get_session(s['id']), 'backup')
+    assert closed['battery_percent'] is None and closed['destination'] is None and closed['safety_capsule'] is None
+
+
+def test_nested_capsule_data_is_not_exposed_through_allowed_key(isolated_db):
+    s, now = make_session()
+    s.update(expected_end_at=now - 16 * 60_000, capsule={'instruction': {'phone': '+15555550111', 'latitude': 32.12345}})
+    db.upsert_session(s)
+    snapshot = public_snapshot(db.get_session(s['id']), 'primary')
+    assert 'instruction' not in snapshot['safety_capsule']

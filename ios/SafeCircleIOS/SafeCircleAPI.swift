@@ -34,11 +34,25 @@ struct SafeCircleAPI {
             "expected_end_at": Int(session.expectedEndAt.timeIntervalSince1970 * 1000),
             "last_check_in_at": Int(session.lastCheckInAt.timeIntervalSince1970 * 1000),
             "state": session.state,
-            "privacy_mode": "PRECISE_ON_ESCALATION",
+            "privacy_mode": UserDefaults.standard.string(forKey: "location_privacy") ?? "STATUS_ONLY",
             "resolved": session.resolved
         ]
         if let destination = session.destination { body["destination"] = destination }
         try await post(path: "/v1/sessions", body: body, token: token)
+    }
+
+    func logout(token: String) async throws {
+        try await post(path: "/v1/auth/logout", body: [:], token: token)
+    }
+
+    func deleteAccount(email: String, password: String, token: String) async throws {
+        var request = URLRequest(url: baseURL.appending(path: "/v1/account"))
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["email": email, "password": password])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data)
     }
 
     func checkIn(_ sessionId: String, token: String) async throws {

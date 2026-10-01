@@ -26,6 +26,8 @@ def connect() -> Iterator[sqlite3.Connection]:
 
 
 def init_db() -> None:
+    from .account_controls import init_controls
+    init_controls()
     with _lock, connect() as conn:
         conn.executescript(
             """
@@ -120,7 +122,14 @@ def init_db() -> None:
             """
         )
 
+        event_columns = {row["name"] for row in conn.execute("PRAGMA table_info(events)")}
+        if "owner_id" not in event_columns:
+            conn.execute("ALTER TABLE events ADD COLUMN owner_id TEXT")
+            conn.execute("UPDATE events SET owner_id=(SELECT r.owner_id FROM client_event_receipts r WHERE r.client_event_id=json_extract(events.payload_json, '$.client_event_id') LIMIT 1) WHERE (SELECT count(DISTINCT r.owner_id) FROM client_event_receipts r WHERE r.client_event_id=json_extract(events.payload_json, '$.client_event_id'))=1")
         session_columns = {row["name"] for row in conn.execute("PRAGMA table_info(sessions)")}
+        for flag in ("share_battery_on_escalation", "share_destination_on_escalation"):
+            if flag not in session_columns:
+                conn.execute(f"ALTER TABLE sessions ADD COLUMN {flag} INTEGER NOT NULL DEFAULT 0")
         if "contacts_json" not in session_columns:
             conn.execute("ALTER TABLE sessions ADD COLUMN contacts_json TEXT")
         columns = {row["name"] for row in conn.execute("PRAGMA table_info(subscriptions)")}
@@ -181,6 +190,9 @@ def upsert_session(data: dict[str, Any]) -> None:
                 now,
             ),
         )
+        for flag in ("share_battery_on_escalation", "share_destination_on_escalation"):
+            if flag in data:
+                conn.execute(f"UPDATE sessions SET {flag}=? WHERE id=?", (int(bool(data[flag])), data["id"]))
         if "guardian_contacts" in data:
             conn.execute("UPDATE sessions SET contacts_json=? WHERE id=?",
                          (encrypt_json({"contacts": data["guardian_contacts"]}), data["id"]))
@@ -234,7 +246,7 @@ def append_client_event(owner_id: str, event: dict[str, Any]) -> None:
         if receipt.rowcount == 0:
             return
         conn.execute(
-            "INSERT INTO events(session_id,event_type,payload_json,created_at) VALUES(?,?,?,?)",
+            "INSERT INTO events(session_id,event_type,payload_json,created_at,owner_id) VALUES(?,?,?,?,?)",
             (
                 event["session_id"],
                 "CLIENT_" + event["event_type"],
@@ -244,6 +256,7 @@ def append_client_event(owner_id: str, event: dict[str, Any]) -> None:
                     "client_created_at": event["created_at"],
                 }),
                 int(time.time() * 1000),
+                owner_id,
             ),
         )
 
@@ -346,6 +359,8 @@ def upsert_subscription(
     event_id: str | None = None,
 ) -> None:
     with _lock, connect() as conn:
+        if conn.execute('SELECT 1 FROM deleted_accounts WHERE user_id=?', (app_user_id,)).fetchone():
+            return
         conn.execute(
             """
             INSERT INTO subscriptions(

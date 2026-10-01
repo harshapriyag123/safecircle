@@ -26,6 +26,8 @@ class SessionUpsert(BaseModel):
     location_accuracy: float | None = Field(default=None, ge=0)
     privacy_mode: PrivacyMode = "PRECISE_ON_ESCALATION"
     capsule: dict | None = None
+    share_battery_on_escalation: bool = False
+    share_destination_on_escalation: bool = False
     resolved: bool = False
     resolved_at: int | None = None
     guardian_contacts: list[GuardianContact] = Field(default_factory=list, max_length=2)
@@ -41,6 +43,8 @@ class SessionPatch(BaseModel):
     location_accuracy: float | None = Field(default=None, ge=0)
     privacy_mode: PrivacyMode | None = None
     capsule: dict | None = None
+    share_battery_on_escalation: bool | None = None
+    share_destination_on_escalation: bool | None = None
     resolved: bool | None = None
     resolved_at: int | None = None
     guardian_contacts: list[GuardianContact] | None = Field(default=None, max_length=2)

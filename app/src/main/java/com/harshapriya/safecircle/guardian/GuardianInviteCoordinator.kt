@@ -52,6 +52,8 @@ class GuardianInviteCoordinator(private val context: Context) {
                 longitude = location?.longitude,
                 locationAccuracy = location?.accuracyMeters,
                 privacyMode = privacy.locationMode.name,
+                        shareBatteryOnEscalation = privacy.shareBatteryOnEscalation,
+                        shareDestinationOnEscalation = privacy.shareDestinationOnEscalation,
                 resolved = session.resolved,
                 guardianContactsJson = EmergencyProfileRepository(context).deliveryContactsJson(),
                         capsuleJson = SafetyCapsuleStore(context).get(session.id)

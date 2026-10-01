@@ -80,12 +80,13 @@ class ProfileFragment : Fragment() {
         if (repo.state() != null) {
             AlertDialog.Builder(requireContext())
                 .setTitle("SafeCircle account")
-                .setItems(arrayOf("Stay signed in", "Sign out")) { dialog, which ->
+                .setItems(arrayOf("Stay signed in", "Sign out", "Delete account")) { dialog, which ->
                     if (which == 1) {
                         repo.signOut()
                         renderAccount(account)
                         Toast.makeText(requireContext(), "Signed out", Toast.LENGTH_SHORT).show()
                     }
+                    if (which == 2) showDeleteAccountDialog(account)
                     dialog.dismiss()
                 }
                 .show()
@@ -99,6 +100,25 @@ class ProfileFragment : Fragment() {
             .setNeutralButton("Create account") { _, _ -> showRegisterDialog(account) }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showDeleteAccountDialog(account: TextView) {
+        val password = EditText(requireContext()).apply {
+            hint = "Current password"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Delete SafeCircle account?")
+            .setMessage("This deletes your server and local data and ends pending monitoring. Already sent alerts cannot be recalled. Store subscriptions are not cancelled; manage those in Customer Center or the store.")
+            .setView(password).setPositiveButton("Delete account", null).setNegativeButton("Cancel", null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                runAuth(dialog, account, "Deleting…", "Account deleted") {
+                    AuthRepository(requireContext()).deleteAccount(password.text.toString())
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun showLoginDialog(account: TextView) {
@@ -190,6 +210,7 @@ class ProfileFragment : Fragment() {
         dialog: AlertDialog,
         account: TextView,
         busyText: String,
+        successText: String = "Account authenticated",
         action: () -> Any
     ) {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
@@ -198,13 +219,13 @@ class ProfileFragment : Fragment() {
             runCatching(action).onSuccess {
                 requireActivity().runOnUiThread {
                     renderAccount(account)
-                    Toast.makeText(requireContext(), "Account authenticated", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), successText, Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                 }
             }.onFailure { error ->
                 requireActivity().runOnUiThread {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = if (busyText.startsWith("Creating")) "Create account" else "Sign in"
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = if (busyText.startsWith("Deleting")) "Delete account" else if (busyText.startsWith("Creating")) "Create account" else "Sign in"
                     Toast.makeText(requireContext(), error.message ?: "Authentication failed", Toast.LENGTH_LONG).show()
                 }
             }
