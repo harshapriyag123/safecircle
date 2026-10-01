@@ -15,7 +15,7 @@ Checked October 1, 2026 against [official rules](https://revenuecat-shipaton-202
 | Testing access/promo if needed | CI debug APK exists. Play/App Store testing access and premium review access still need configuration. Demo does not prove a purchase. |
 | Next Gen exception | Conditional on active eligible student status, public source/demo and academic verification; guardian consent if a minor. User eligibility not confirmed. |
 | Public source | Existing public repository and reviewable PR #2. |
-| Public website/privacy/support | Implemented in same backend deployment; publishing this branch and verifying public HTTPS routes remain pending. |
+| Public website/privacy/support | Public static preview published; real Guardian/backend deployment and complete native video remain pending. |
 
 ## Two-minute native demo script
 

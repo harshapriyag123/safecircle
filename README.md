@@ -6,7 +6,7 @@
 <p align="center">
   <a href="#screenshots">Screenshots</a> ·
   <a href="https://github.com/harshapriyag123/safecircle/actions/runs/36904874195/artifacts/11182798938">Download debug APK</a> ·
-  <a href="#website-status">Website status</a> ·
+  <a href="https://safecircle-public-preview.harsha9944.chatgpt.site/site/">Public preview</a> ·
   <a href="docs/SHIPATON.md">Shipaton checklist</a> ·
   <a href="https://github.com/harshapriyag123/safecircle/pull/2">Implementation PR</a>
 </p>
@@ -69,7 +69,11 @@ See [build evidence and checksums](docs/VERIFICATION.md), [gap audit](docs/GAP_A
 
 The public product site is implemented under `web/site/`, with a landing page, screenshots, a labeled simulated demo, privacy policy, support links and testing instructions. The web companion and signed Guardian experience use the backend.
 
-**No public deployment has been verified.** The [previously configured Railway origin](https://safecircle-production-5a32.up.railway.app) returned HTTP 404 “Application not found.” It is a diagnostic link, not a working product website. A RevenueCat dashboard URL is not the product website.
+**Public website preview is live:** https://safecircle-public-preview.harsha9944.chatgpt.site/site/
+
+It serves the landing page and simulated demo; accounts, real Guardian sessions and alerts are not connected there. See [free hosting and self-hosting setup](docs/FREE_HOSTING.md). The Android API URL must point to a separately verified backend.
+
+**No live safety backend has been verified.** The [previously configured Railway origin](https://safecircle-production-5a32.up.railway.app) returned HTTP 404 “Application not found.” It is a diagnostic link, not a working product website. A RevenueCat dashboard URL is not the product website.
 
 Run locally at `http://localhost:8080/site/`; open the companion at `http://localhost:8080/app/v4.html`, demo at `http://localhost:8080/site/demo.html` and privacy policy at `http://localhost:8080/site/privacy.html`. Real Guardian links require a signed token. The native video section is marked pending.
 

@@ -31,3 +31,7 @@ No live RevenueCat/store purchase, production provider delivery, Railway deploym
 The configured Railway origin `https://safecircle-production-5a32.up.railway.app` returned HTTP 404 “Application not found” at `/health` and `/site/` on October 1. It is not a verified product website. Railway is connected, but no callable Railway tools are exposed in this session. Deployment requires access to the actual service/configuration and persistent storage, followed by HTTPS health/Guardian/provider tests.
 
 [Native screenshots and result](https://github.com/harshapriyag123/safecircle/actions/runs/36904874195/artifacts/11183706603), also embedded in README. Offline test identity only. Captures show real app UI; no provider or purchase claim. Backup disabled; headings respect system bars in the final tested build.
+
+## Free hosting follow-up
+
+Latest pre-follow-up PR commit `c5ca698` passed all four workflows (Android run 36907203791, backend 36907203629, iOS 36907203855, website 36907203878). Public static preview deployment succeeded at https://safecircle-public-preview.harsha9944.chatgpt.site/site/. Exported assets checked, and export helper matches deployed source. Self-host secret/configuration checks passed. No live backend or Docker runtime was verified; account-free tunnel was network-blocked. See `FREE_HOSTING.md`. Android was not rebuilt against a static site lacking an API.

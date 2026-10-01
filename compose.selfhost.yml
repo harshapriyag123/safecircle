@@ -1,0 +1,20 @@
+services:
+  safecircle:
+    build: .
+    restart: unless-stopped
+    env_file: .env.selfhost
+    environment:
+      SAFECIRCLE_ENV: production
+      SAFECIRCLE_DB_PATH: /data/safecircle.db
+      SAFECIRCLE_ALLOW_DEMO_TOKEN: "false"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - safecircle_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+volumes:
+  safecircle_data:

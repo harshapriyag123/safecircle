@@ -16,3 +16,7 @@ __pycache__/
 
 # Website verification dependencies
 node_modules/
+
+# Local self-hosting credentials and database exports
+.env.selfhost
+.safecircle-data/
