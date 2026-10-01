@@ -109,7 +109,7 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
 
     lat = session.get("latitude")
     lon = session.get("longitude")
-    can_reveal_precise = state in {"CONCERN", "ESCALATED"} or (stage is not None and stage >= 15)
+    can_reveal_precise = state == "ESCALATED" or (stage is not None and stage >= 15)
 
     if bool(session["resolved"]):
         result["location"] = None
@@ -129,8 +129,13 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     else:
         result["location"] = None
 
-    if stage is not None and stage >= 15:
-        result["safety_capsule"] = session.get("capsule")
+    capsule = session.get("capsule")
+    capsule_expiry = capsule.get("expiresAt") if isinstance(capsule, dict) else None
+    capsule_current = capsule_expiry is None or (
+        isinstance(capsule_expiry, (int, float)) and capsule_expiry > now_ms()
+    )
+    if stage is not None and stage >= 15 and capsule_current:
+        result["safety_capsule"] = capsule
     else:
         result["safety_capsule"] = None
 
@@ -346,7 +351,10 @@ def patch_session(
     if bool(current["resolved"]):
         raise HTTPException(status_code=409, detail="Resolved sessions are read-only")
 
-    updates = body.model_dump(exclude_none=True)
+    updates = body.model_dump(exclude_unset=True)
+    required_fields = {"expected_end_at", "last_check_in_at", "state", "privacy_mode", "resolved"}
+    if any(updates.get(field) is None for field in required_fields.intersection(updates)):
+        raise HTTPException(status_code=422, detail="Required session fields cannot be cleared")
     resolving = updates.get("resolved") is True
     if resolving:
         updates["state"] = "RESOLVED"
@@ -420,19 +428,18 @@ def ingest_events(
     body: ClientEventBatch,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
-    acknowledged: list[str] = []
+    user_id = auth_or_401(authorization)
+    # Validate the entire batch before writing anything or acknowledging it.
+    for event in body.events:
+        if event.session_id is not None:
+            session = db.get_session(event.session_id)
+            if session is None:
+                raise HTTPException(status_code=404, detail="Session not found")
+            assert_owner(user_id, session["owner_id"])
 
-    for event in body.events[:500]:
-        db.append_event(
-            event.session_id,
-            "CLIENT_" + event.event_type,
-            {
-                "client_event_id": event.id,
-                "payload": event.payload,
-                "client_created_at": event.created_at,
-            },
-        )
+    acknowledged: list[str] = []
+    for event in body.events:
+        db.append_client_event(user_id, event.model_dump())
         acknowledged.append(event.id)
 
     return {"acknowledged_event_ids": acknowledged}
@@ -522,19 +529,42 @@ def revenuecat_webhook(
     if not app_user_id:
         raise HTTPException(status_code=400, detail="RevenueCat event is missing app_user_id")
 
-    active = "safecircle_pro" in entitlement_ids and event_type not in {
-        "EXPIRATION",
-        "CANCELLATION",
-        "BILLING_ISSUE",
+    supported_types = {
+        "INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE", "UNCANCELLATION",
+        "CANCELLATION", "BILLING_ISSUE", "EXPIRATION", "SUBSCRIPTION_EXTENDED",
+        "SUBSCRIPTION_PAUSED", "REFUND_REVERSED", "TEMPORARY_ENTITLEMENT_GRANT",
     }
+    if event_type not in supported_types or "safecircle_pro" not in entitlement_ids:
+        return {"ok": True, "ignored": True, "event_type": event_type}
+
+    # Cancellation of renewal does not end the current paid period. Billing
+    # grace extends access; expiration and refunds remove it.
+    grace_expiration = event.get("grace_period_expiration_at_ms")
+    try:
+        deadlines = [int(value) for value in (expiration_at_ms, grace_expiration) if value is not None]
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid entitlement expiration") from exc
+    expiration_at_ms = max(deadlines) if deadlines else None
+    refunded = event_type == "CANCELLATION" and event.get("cancel_reason") == "CUSTOMER_SUPPORT"
+    active = (
+        event_type != "EXPIRATION"
+        and not refunded
+        and (expiration_at_ms is None or expiration_at_ms > now_ms())
+    )
+    try:
+        event_timestamp_ms = int(event.get("event_timestamp_ms") or now_ms())
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid event timestamp") from exc
     db.upsert_subscription(
         app_user_id,
         "safecircle_pro",
         active,
         product_id,
         expiration_at_ms,
+        event_timestamp_ms=event_timestamp_ms,
+        event_id=str(event["id"]) if event.get("id") else None,
     )
-    return {"ok": True, "active": active, "event_type": event_type}
+    return {"ok": True, "active": db.get_subscription(app_user_id)["is_active"], "event_type": event_type}
 
 
 @app.get("/v1/subscriptions/{app_user_id}")
@@ -542,7 +572,8 @@ def subscription_status(
     app_user_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
+    assert_owner(user_id, app_user_id)
     status = db.get_subscription(app_user_id)
     if status is None:
         status = {
@@ -552,4 +583,7 @@ def subscription_status(
             "product_id": None,
             "expiration_at_ms": None,
         }
+    expiration = status.get("expiration_at_ms")
+    if expiration is not None and expiration <= now_ms():
+        status["is_active"] = False
     return {"subscription": status}

@@ -7,7 +7,8 @@ class SyncCoordinator(
     private val gateway: SafeCircleGateway
 ) {
     suspend fun flush(): Int {
-        val pending = queue.all()
+        // Match the API batch limit; remaining events stay queued for the next flush.
+        val pending = queue.all().take(500)
         if (pending.isEmpty()) return 0
         val acknowledged = gateway.upload(pending).toSet()
         pending.filter { it.id in acknowledged }.forEach { queue.acknowledge(it.id) }

@@ -59,6 +59,12 @@ def init_db() -> None:
                 UNIQUE(session_id, event_type, stage_minutes)
             );
 
+            CREATE TABLE IF NOT EXISTS client_event_receipts (
+                owner_id TEXT NOT NULL,
+                client_event_id TEXT NOT NULL,
+                PRIMARY KEY(owner_id, client_event_id)
+            );
+
             CREATE TABLE IF NOT EXISTS guardian_invites (
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
@@ -87,6 +93,12 @@ def init_db() -> None:
             );
             """
         )
+
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(subscriptions)")}
+        if "event_timestamp_ms" not in columns:
+            conn.execute("ALTER TABLE subscriptions ADD COLUMN event_timestamp_ms INTEGER NOT NULL DEFAULT 0")
+        if "last_event_id" not in columns:
+            conn.execute("ALTER TABLE subscriptions ADD COLUMN last_event_id TEXT")
 
 
 def upsert_session(data: dict[str, Any]) -> None:
@@ -143,7 +155,7 @@ def get_session(session_id: str) -> dict[str, Any] | None:
         return None
     result = dict(row)
     result["resolved"] = bool(result["resolved"])
-    result["capsule"] = decrypt_json(result.get("capsule_json"))
+    result["capsule"] = decrypt_json(result.pop("capsule_json", None))
     return result
 
 
@@ -152,7 +164,36 @@ def active_sessions() -> list[dict[str, Any]]:
         rows = conn.execute(
             "SELECT * FROM sessions WHERE resolved=0 ORDER BY expected_end_at ASC"
         ).fetchall()
-    return [dict(row) for row in rows]
+    result = []
+    for row in rows:
+        item = dict(row)
+        item["capsule"] = decrypt_json(item.pop("capsule_json", None))
+        result.append(item)
+    return result
+
+
+def append_client_event(owner_id: str, event: dict[str, Any]) -> None:
+    """Persist a retry receipt and its event in the same transaction."""
+    with _lock, connect() as conn:
+        receipt = conn.execute(
+            "INSERT OR IGNORE INTO client_event_receipts(owner_id,client_event_id) VALUES(?,?)",
+            (owner_id, event["id"]),
+        )
+        if receipt.rowcount == 0:
+            return
+        conn.execute(
+            "INSERT INTO events(session_id,event_type,payload_json,created_at) VALUES(?,?,?,?)",
+            (
+                event["session_id"],
+                "CLIENT_" + event["event_type"],
+                json.dumps({
+                    "client_event_id": event["id"],
+                    "payload": event["payload"],
+                    "client_created_at": event["created_at"],
+                }),
+                int(time.time() * 1000),
+            ),
+        )
 
 
 def append_event(
@@ -249,19 +290,26 @@ def upsert_subscription(
     is_active: bool,
     product_id: str | None,
     expiration_at_ms: int | None,
+    event_timestamp_ms: int = 0,
+    event_id: str | None = None,
 ) -> None:
     with _lock, connect() as conn:
         conn.execute(
             """
             INSERT INTO subscriptions(
-                app_user_id,entitlement_id,is_active,product_id,expiration_at_ms,updated_at
-            ) VALUES(?,?,?,?,?,?)
+                app_user_id,entitlement_id,is_active,product_id,expiration_at_ms,updated_at,event_timestamp_ms,last_event_id
+            ) VALUES(?,?,?,?,?,?,?,?)
             ON CONFLICT(app_user_id) DO UPDATE SET
                 entitlement_id=excluded.entitlement_id,
                 is_active=excluded.is_active,
                 product_id=excluded.product_id,
                 expiration_at_ms=excluded.expiration_at_ms,
-                updated_at=excluded.updated_at
+                updated_at=excluded.updated_at,
+                event_timestamp_ms=excluded.event_timestamp_ms,
+                last_event_id=excluded.last_event_id
+            WHERE excluded.event_timestamp_ms >= subscriptions.event_timestamp_ms
+                AND (excluded.last_event_id IS NULL OR subscriptions.last_event_id IS NULL
+                     OR excluded.last_event_id != subscriptions.last_event_id)
             """,
             (
                 app_user_id,
@@ -270,6 +318,8 @@ def upsert_subscription(
                 product_id,
                 expiration_at_ms,
                 int(time.time() * 1000),
+                event_timestamp_ms,
+                event_id,
             ),
         )
 
