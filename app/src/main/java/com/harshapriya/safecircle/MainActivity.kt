@@ -6,6 +6,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -31,6 +34,15 @@ class MainActivity : AppCompatActivity(), PaywallResultHandler {
         paywallLauncher = PaywallActivityLauncher(this, this)
 
         setContentView(R.layout.activity_main)
+        // Android 15+ enforces edge-to-edge; keep headings below status/cutout areas.
+        val content = findViewById<android.view.View>(R.id.mainRoot)
+        ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            view.setPadding(bars.left, bars.top, bars.right, 0)
+            insets // BottomNavigationView handles its own bottom navigation inset.
+        }
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
+        ViewCompat.requestApplyInsets(content)
 
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment)

@@ -28,6 +28,7 @@ def tap(resource):
     raise RuntimeError('Visible enabled control missing: '+resource)
 
 def screenshot(name):
+    time.sleep(3)  # Let transient toasts/animations finish before exporting evidence.
     data=subprocess.check_output(['adb','exec-out','screencap','-p'])
     (OUT/name).write_bytes(data)
 
@@ -36,7 +37,9 @@ for permission in ('ACCESS_COARSE_LOCATION','ACCESS_FINE_LOCATION','POST_NOTIFIC
     adb('shell','pm','grant',PACKAGE,'android.permission.'+permission)
 adb('shell','am','start','-n',PACKAGE+'/.onboarding.OnboardingActivity')
 time.sleep(3)
+screenshot('native-onboarding.png')
 tap('onboardingContinueButton')
+time.sleep(4)
 if not adb('shell','pidof',PACKAGE): raise RuntimeError('App did not remain running')
 if PACKAGE not in adb('shell','dumpsys','jobscheduler'):
     raise RuntimeError('Background work was not scheduled at startup')
