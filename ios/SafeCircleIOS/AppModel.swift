@@ -4,7 +4,10 @@ import UIKit
 @MainActor
 final class AppModel: ObservableObject {
     @Published var session: SafetySession?
-    @Published var auth: AuthState?
+    let billing = BillingModel()
+    @Published var auth: AuthState? {
+        didSet { Task { await billing.identify(auth?.userId) } }
+    }
     @Published var message: String?
     @Published var isLoading = false
 

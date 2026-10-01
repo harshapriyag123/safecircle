@@ -1,6 +1,7 @@
 package com.harshapriya.safecircle.background
 
 import android.content.Context
+import com.harshapriya.safecircle.profile.EmergencyProfileRepository
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.harshapriya.safecircle.auth.AccountRepository
@@ -57,6 +58,7 @@ class SyncWorker(
                         locationAccuracy = location?.accuracyMeters,
                         privacyMode = privacy.locationMode.name,
                         resolved = session.resolved,
+                        guardianContactsJson = EmergencyProfileRepository(applicationContext).deliveryContactsJson(),
                         capsuleJson = if (session.resolved) null else SafetyCapsuleStore(applicationContext).get(session.id),
                         resolvedAt = session.resolvedAt
                     )

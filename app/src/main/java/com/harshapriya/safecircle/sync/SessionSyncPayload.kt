@@ -16,5 +16,6 @@ data class SessionSyncPayload(
     val privacyMode: String,
     val resolved: Boolean,
     val capsuleJson: String? = null,
-    val resolvedAt: Long? = null
+    val resolvedAt: Long? = null,
+    val guardianContactsJson: String? = null
 )

@@ -108,12 +108,14 @@ class SafetyRepository(private val context: Context) {
         }
         val updated = current.copy(
             lastCheckInAt = System.currentTimeMillis(),
+            expectedEndAt = maxOf(current.expectedEndAt, System.currentTimeMillis() + 5 * 60_000L),
             missedCheckIns = 0,
             routeDeviation = false,
             batteryPercent = battery.currentPercent(),
             state = SafetyState.NORMAL
         )
         saveSession(updated)
+        scheduler.schedule(updated.id, updated.expectedEndAt)
         audit.append(AuditEvent(updated.lastCheckInAt, "CHECK_IN", updated.id, "user confirmed"))
         SyncScheduler.syncNow(context)
         return updated

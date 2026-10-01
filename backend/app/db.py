@@ -59,6 +59,32 @@ def init_db() -> None:
                 UNIQUE(session_id, event_type, stage_minutes)
             );
 
+            CREATE TABLE IF NOT EXISTS delivery_jobs (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                deadline INTEGER NOT NULL,
+                stage INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                channel TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'queued',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                next_attempt_at INTEGER NOT NULL,
+                lease_until INTEGER,
+                provider_message_id TEXT,
+                error TEXT,
+                updated_at INTEGER NOT NULL,
+                UNIQUE(session_id,deadline,stage,role,channel)
+            );
+            CREATE INDEX IF NOT EXISTS delivery_jobs_due ON delivery_jobs(status,next_attempt_at);
+            CREATE TABLE IF NOT EXISTS subscription_reconcile_jobs (
+                app_user_id TEXT PRIMARY KEY, generation INTEGER NOT NULL, next_attempt_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS revenuecat_receipts (
+                event_id TEXT PRIMARY KEY,
+                created_at INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS client_event_receipts (
                 owner_id TEXT NOT NULL,
                 client_event_id TEXT NOT NULL,
@@ -94,6 +120,9 @@ def init_db() -> None:
             """
         )
 
+        session_columns = {row["name"] for row in conn.execute("PRAGMA table_info(sessions)")}
+        if "contacts_json" not in session_columns:
+            conn.execute("ALTER TABLE sessions ADD COLUMN contacts_json TEXT")
         columns = {row["name"] for row in conn.execute("PRAGMA table_info(subscriptions)")}
         if "event_timestamp_ms" not in columns:
             conn.execute("ALTER TABLE subscriptions ADD COLUMN event_timestamp_ms INTEGER NOT NULL DEFAULT 0")
@@ -146,6 +175,12 @@ def upsert_session(data: dict[str, Any]) -> None:
                 now,
             ),
         )
+        if "guardian_contacts" in data:
+            conn.execute("UPDATE sessions SET contacts_json=? WHERE id=?",
+                         (encrypt_json({"contacts": data["guardian_contacts"]}), data["id"]))
+        conn.execute("UPDATE delivery_jobs SET status='cancelled',updated_at=? WHERE session_id=? "
+                     "AND status IN ('queued','sending') AND (?=1 OR deadline!=?)",
+                     (now, data["id"], int(bool(data.get("resolved"))), data["expected_end_at"]))
 
 
 def get_session(session_id: str) -> dict[str, Any] | None:
@@ -156,6 +191,7 @@ def get_session(session_id: str) -> dict[str, Any] | None:
     result = dict(row)
     result["resolved"] = bool(result["resolved"])
     result["capsule"] = decrypt_json(result.pop("capsule_json", None))
+    result["guardian_contacts"] = (decrypt_json(result.pop("contacts_json", None)) or {}).get("contacts", [])
     return result
 
 
@@ -168,6 +204,7 @@ def active_sessions() -> list[dict[str, Any]]:
     for row in rows:
         item = dict(row)
         item["capsule"] = decrypt_json(item.pop("capsule_json", None))
+        item["guardian_contacts"] = (decrypt_json(item.pop("contacts_json", None)) or {}).get("contacts", [])
         result.append(item)
     return result
 
@@ -361,4 +398,82 @@ def get_user_by_email(email: str) -> dict[str, Any] | None:
 def get_user(user_id: str) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def enqueue_delivery(session: dict[str, Any], stage: int, role: str, channel: str,
+                     payload: dict[str, Any], current: int) -> str:
+    import hashlib
+    identity = f"{session['id']}:{session['expected_end_at']}:{stage}:{role}:{channel}"
+    job_id = hashlib.sha256(identity.encode()).hexdigest()
+    with _lock, connect() as conn:
+        conn.execute("INSERT OR IGNORE INTO delivery_jobs(id,session_id,deadline,stage,role,channel,"
+                     "payload_json,next_attempt_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                     (job_id, session['id'], session['expected_end_at'], stage, role, channel,
+                      encrypt_json(payload), current, current))
+    return job_id
+
+
+def claim_delivery(current: int) -> dict[str, Any] | None:
+    with _lock, connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT j.* FROM delivery_jobs j JOIN sessions s ON s.id=j.session_id "
+                           "WHERE s.resolved=0 AND s.expected_end_at=j.deadline AND "
+                           "((j.status='queued' AND j.next_attempt_at<=?) OR "
+                           "(j.status='sending' AND j.lease_until<=?)) "
+                           "ORDER BY j.next_attempt_at LIMIT 1", (current, current)).fetchone()
+        if row is None:
+            return None
+        job = dict(row)
+        conn.execute("UPDATE delivery_jobs SET status='sending',lease_until=?,updated_at=? WHERE id=?",
+                     (current + 60_000, current, job['id']))
+    job['payload'] = decrypt_json(job.pop('payload_json'))
+    return job
+
+
+def finish_delivery(job_id: str, status: str, current: int, *, error: str | None = None,
+                    provider_message_id: str | None = None, next_attempt_at: int | None = None,
+                    attempted: bool = True) -> None:
+    with _lock, connect() as conn:
+        conn.execute("UPDATE delivery_jobs SET status=?,error=?,provider_message_id=?,"
+                     "next_attempt_at=?,lease_until=NULL,attempts=attempts+?,updated_at=? "
+                     "WHERE id=? AND status='sending'",
+                     (status, error, provider_message_id, next_attempt_at or current,
+                      int(attempted), current, job_id))
+
+
+def mark_delivery_receipt(job_id: str, delivered: bool, current: int) -> bool:
+    with _lock, connect() as conn:
+        cur = conn.execute("UPDATE delivery_jobs SET status=?,updated_at=? WHERE id=? AND status IN ('accepted','sending')",
+                           ('delivered' if delivered else 'failed', current, job_id))
+    return cur.rowcount > 0
+
+
+def delivery_status(session_id: str) -> list[dict[str, Any]]:
+    with connect() as conn:
+        return [dict(row) for row in conn.execute(
+            "SELECT id,stage,role,channel,status,attempts,provider_message_id,error,updated_at "
+            "FROM delivery_jobs WHERE session_id=? ORDER BY deadline,stage,role", (session_id,))]
+
+
+def purge_expired_capsules(current: int) -> int:
+    count = 0
+    with _lock, connect() as conn:
+        rows = conn.execute("SELECT id,capsule_json FROM sessions WHERE capsule_json IS NOT NULL").fetchall()
+        for row in rows:
+            capsule = decrypt_json(row['capsule_json']) or {}
+            expiry = capsule.get('expiresAt')
+            if isinstance(expiry, (int, float)) and expiry <= current:
+                conn.execute("UPDATE sessions SET capsule_json=NULL WHERE id=?", (row['id'],))
+                count += 1
+        # Payloads include contacts. Erase them from completed/obsolete jobs after 24h.
+        conn.execute("UPDATE delivery_jobs SET payload_json=? WHERE status IN "
+                     "('delivered','failed','cancelled','accepted') AND updated_at<?",
+                     (encrypt_json({}), current - 86_400_000))
+    return count
+
+
+def get_delivery(job_id: str) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute("SELECT id,channel,status,provider_message_id FROM delivery_jobs WHERE id=?", (job_id,)).fetchone()
     return dict(row) if row else None

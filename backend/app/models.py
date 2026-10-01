@@ -5,6 +5,12 @@ from typing import Literal
 PrivacyMode = Literal["STATUS_ONLY", "APPROXIMATE", "PRECISE_ON_ESCALATION"]
 
 
+class GuardianContact(BaseModel):
+    role: Literal["primary", "backup"]
+    phone: str = Field(pattern=r"^\+[1-9]\d{7,14}$")
+    consented: bool = False
+
+
 class SessionUpsert(BaseModel):
     id: str = Field(min_length=4, max_length=128)
     owner_id: str = Field(min_length=3, max_length=128)
@@ -22,6 +28,7 @@ class SessionUpsert(BaseModel):
     capsule: dict | None = None
     resolved: bool = False
     resolved_at: int | None = None
+    guardian_contacts: list[GuardianContact] = Field(default_factory=list, max_length=2)
 
 
 class SessionPatch(BaseModel):
@@ -36,6 +43,7 @@ class SessionPatch(BaseModel):
     capsule: dict | None = None
     resolved: bool | None = None
     resolved_at: int | None = None
+    guardian_contacts: list[GuardianContact] | None = Field(default=None, max_length=2)
 
 
 class GuardianInviteCreate(BaseModel):

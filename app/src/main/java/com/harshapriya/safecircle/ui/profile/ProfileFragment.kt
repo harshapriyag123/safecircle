@@ -228,11 +228,13 @@ class ProfileFragment : Fragment() {
             setPadding(48, 0, 48, 0)
         }
         val name = EditText(requireContext()).apply { hint = "Display name"; setText(current.displayName) }
-        val contact = EditText(requireContext()).apply { hint = "Primary contact"; setText(current.primaryContact) }
+        val contact = EditText(requireContext()).apply { hint = "Primary phone (+country code)"; setText(current.primaryContact) }
+        val backup = EditText(requireContext()).apply { hint = "Backup phone (+country code)"; setText(current.backupContact) }
+        val consent = android.widget.CheckBox(requireContext()).apply { text = "Both Guardians agreed to receive safety SMS alerts"; isChecked = current.deliveryConsent }
         val language = EditText(requireContext()).apply { hint = "Preferred language"; setText(current.preferredLanguage) }
         val notes = EditText(requireContext()).apply { hint = "Emergency notes (optional)"; setText(current.emergencyNotes) }
         val instruction = EditText(requireContext()).apply { hint = "Guardian instruction"; setText(current.guardianInstruction) }
-        box.addView(name); box.addView(contact); box.addView(language); box.addView(notes); box.addView(instruction)
+        box.addView(name); box.addView(contact); box.addView(backup); box.addView(consent); box.addView(language); box.addView(notes); box.addView(instruction)
 
         AlertDialog.Builder(requireContext())
             .setTitle("Emergency Profile")
@@ -243,11 +245,14 @@ class ProfileFragment : Fragment() {
                     EmergencyProfile(
                         displayName = name.text.toString().trim(),
                         primaryContact = contact.text.toString().trim(),
+                        backupContact = backup.text.toString().trim(),
+                        deliveryConsent = consent.isChecked,
                         preferredLanguage = language.text.toString().ifBlank { "English" },
                         emergencyNotes = notes.text.toString().trim(),
                         guardianInstruction = instruction.text.toString().ifBlank { "Call me first. If I do not answer, contact my backup Guardian." }
                     )
                 )
+                com.harshapriya.safecircle.background.SyncScheduler.syncNow(requireContext())
                 renderEmergencyProfile()
             }
             .setNegativeButton("Cancel", null)

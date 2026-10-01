@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 from pathlib import Path
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -135,7 +135,9 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
         isinstance(capsule_expiry, (int, float)) and capsule_expiry > now_ms()
     )
     if stage is not None and stage >= 15 and capsule_current:
-        result["safety_capsule"] = capsule
+        allowed = {"sessionId", "createdAt", "expiresAt", "destinationLabel", "batteryPercent",
+                   "guardianInstructions", "instruction"}
+        result["safety_capsule"] = {key: value for key, value in (capsule or {}).items() if key in allowed}
     else:
         result["safety_capsule"] = None
 
@@ -157,44 +159,22 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
 
 
 async def escalation_loop(stop: asyncio.Event) -> None:
+    from .delivery import schedule_escalations, process_delivery
+    import logging
     while not stop.is_set():
-        current = now_ms()
-        for session in db.active_sessions():
-            stage = stage_for_session(session, current)
-            if stage is None:
-                continue
-
-            created = db.append_event(
-                session["id"],
-                "ESCALATION_STAGE",
-                {
-                    "state": session["state"],
-                    "stage_minutes": stage,
-                    "expected_end_at": session["expected_end_at"],
-                },
-                stage_minutes=stage,
-            )
-            if created and stage >= 5:
-                results = await asyncio.to_thread(deliver_escalation, session, stage)
-                if not results:
-                    db.append_event(
-                        session["id"],
-                        "GUARDIAN_DELIVERY_PENDING",
-                        {"stage_minutes": stage, "channel": "provider_not_configured"},
-                        stage_minutes=stage,
-                    )
-                for index, result in enumerate(results):
-                    db.append_event(
-                        session["id"],
-                        "GUARDIAN_DELIVERY_" + result.channel.upper() + "_" + str(index),
-                        {
-                            "stage_minutes": stage,
-                            "accepted": result.accepted,
-                            "provider_message_id": result.provider_message_id,
-                            "error": result.error,
-                        },
-                    )
-
+        try:
+            current = now_ms()
+            for session in db.active_sessions():
+                schedule_escalations(session, current)
+            for _ in range(50):
+                if not await asyncio.to_thread(process_delivery, now_ms()):
+                    break
+            db.purge_expired_capsules(current)
+            from .revenuecat import reconcile_pending
+            await asyncio.to_thread(reconcile_pending, current)
+        except Exception:
+            # A failed provider or malformed record must not kill the scheduler.
+            logging.getLogger(__name__).exception("Escalation worker iteration failed")
         try:
             await asyncio.wait_for(stop.wait(), timeout=15)
         except asyncio.TimeoutError:
@@ -203,6 +183,8 @@ async def escalation_loop(stop: asyncio.Event) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .config import validate_production_config
+    validate_production_config()
     db.init_db()
     stop = asyncio.Event()
     task = asyncio.create_task(escalation_loop(stop))
@@ -312,6 +294,13 @@ def upsert_session(
         }
 
     data = body.model_dump()
+    if existing is not None:
+        # Offline snapshots cannot move an acknowledged deadline backwards.
+        data["expected_end_at"] = max(data["expected_end_at"], existing["expected_end_at"])
+        if body.last_check_in_at > existing["last_check_in_at"] and data["expected_end_at"] <= now_ms():
+            data["expected_end_at"] = now_ms() + 5 * 60_000
+        if "guardian_contacts" not in body.model_fields_set:
+            data["guardian_contacts"] = existing.get("guardian_contacts", [])
     transitioned_to_resolved = body.resolved and not bool(existing and existing["resolved"])
     if body.resolved:
         data["state"] = "RESOLVED"
@@ -382,6 +371,7 @@ def check_in(
         raise HTTPException(status_code=409, detail="Resolved sessions cannot be checked in")
 
     session["last_check_in_at"] = now_ms()
+    session["expected_end_at"] = max(session["expected_end_at"], now_ms() + 5 * 60_000)
     session["state"] = "NORMAL"
     db.upsert_session(session)
     db.append_event(session_id, "CHECK_IN", {"source": "owner"})
@@ -526,8 +516,20 @@ def revenuecat_webhook(
     product_id = event.get("product_id")
     expiration_at_ms = event.get("expiration_at_ms")
 
+    affected = {app_user_id} if app_user_id else set()
+    for field in ('aliases', 'transferred_from', 'transferred_to'):
+        values = event.get(field, [])
+        if isinstance(values, list):
+            affected.update(value for value in values if isinstance(value, str) and value)
+    if not affected:
+        if event_type == 'TEST':
+            return {'ok': True, 'ignored': True}
+        raise HTTPException(status_code=400, detail="RevenueCat event is missing customer identifiers")
+    from .revenuecat import enqueue_reconciliation
+    for customer in affected:
+        enqueue_reconciliation(customer, now_ms())
     if not app_user_id:
-        raise HTTPException(status_code=400, detail="RevenueCat event is missing app_user_id")
+        return {'ok': True, 'reconciliation_queued': True, 'event_type': event_type}
 
     supported_types = {
         "INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE", "UNCANCELLATION",
@@ -587,3 +589,64 @@ def subscription_status(
     if expiration is not None and expiration <= now_ms():
         status["is_active"] = False
     return {"subscription": status}
+
+
+@app.get("/v1/sessions/{session_id}/deliveries")
+def owner_deliveries(session_id: str, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    user = auth_or_401(authorization)
+    session = db.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user, session['owner_id'])
+    return {"deliveries": db.delivery_status(session_id)}
+
+
+@app.post("/v1/delivery-receipts/push/{job_id}")
+async def push_delivery_receipt(job_id: str, request: Request,
+                                authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    import hmac
+    secret = os.getenv('SAFECIRCLE_DELIVERY_RECEIPT_SECRET', '')
+    if not secret or not hmac.compare_digest(authorization or '', 'Bearer ' + secret):
+        raise HTTPException(status_code=401, detail='Invalid delivery receipt authentication')
+    body = await request.json()
+    if body.get('status') not in {'delivered', 'failed'}:
+        raise HTTPException(status_code=422, detail='Expected delivered or failed status')
+    job = db.get_delivery(job_id)
+    if job is None or job['channel'] != 'push_webhook':
+        raise HTTPException(status_code=404, detail='Delivery not found')
+    db.mark_delivery_receipt(job_id, body['status'] == 'delivered', now_ms())
+    return {'ok': True}
+
+
+@app.post("/v1/delivery-receipts/twilio/{job_id}")
+async def twilio_delivery_receipt(job_id: str, request: Request) -> dict[str, Any]:
+    import base64
+    import hashlib
+    import hmac
+    from urllib.parse import parse_qs
+    token = os.getenv('TWILIO_AUTH_TOKEN', '')
+    base = os.getenv('SAFECIRCLE_PUBLIC_BASE_URL', '').rstrip('/')
+    fields = parse_qs((await request.body()).decode(), keep_blank_values=True)
+    canonical = base + '/v1/delivery-receipts/twilio/' + job_id
+    canonical += ''.join(key + value for key in sorted(fields) for value in sorted(set(fields[key])))
+    signature = base64.b64encode(hmac.new(token.encode(), canonical.encode(), hashlib.sha1).digest()).decode()
+    if not token or not base or not hmac.compare_digest(signature, request.headers.get('X-Twilio-Signature', '')):
+        raise HTTPException(status_code=401, detail='Invalid Twilio callback signature')
+    job = db.get_delivery(job_id)
+    if job is None or job['channel'] != 'twilio_sms':
+        raise HTTPException(status_code=404, detail='Delivery not found')
+    sid = fields.get('MessageSid', [''])[0]
+    if job['provider_message_id'] and sid != job['provider_message_id']:
+        raise HTTPException(status_code=409, detail='Provider message mismatch')
+    status = fields.get('MessageStatus', [''])[0]
+    if status in {'delivered', 'failed', 'undelivered'}:
+        db.mark_delivery_receipt(job_id, status == 'delivered', now_ms())
+    return {'ok': True}
+
+
+@app.post('/v1/subscriptions/{app_user_id}/reconcile')
+def request_subscription_reconciliation(app_user_id: str, authorization: str | None = Header(default=None)):
+    assert_owner(auth_or_401(authorization), app_user_id)
+    from .revenuecat import enqueue_reconciliation
+    enqueue_reconciliation(app_user_id, now_ms())
+    return {'queued': True}

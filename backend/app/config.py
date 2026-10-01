@@ -1,0 +1,25 @@
+import os
+from pathlib import Path
+
+
+def validate_production_config() -> None:
+    if os.getenv('SAFECIRCLE_ENV', 'development') != 'production':
+        return
+    required = ('SAFECIRCLE_API_SECRET', 'SAFECIRCLE_ACCESS_TOKEN_SECRET', 'GUARDIAN_SIGNING_SECRET',
+                'REVENUECAT_WEBHOOK_SECRET', 'SAFECIRCLE_DATA_ENCRYPTION_KEY')
+    missing = [key for key in required if not os.getenv(key) or 'change-me' in os.getenv(key, '')
+               or 'replace-with' in os.getenv(key, '')]
+    if missing:
+        raise RuntimeError('Production requires independent configured secrets: ' + ', '.join(missing))
+    secrets = [os.environ[key] for key in required]
+    if len(set(secrets)) != len(secrets):
+        raise RuntimeError('Production secrets must be independent')
+    if os.getenv('SAFECIRCLE_ALLOW_DEMO_TOKEN', 'false').lower() == 'true':
+        raise RuntimeError('Shared demo access must be disabled in production')
+    path = Path(os.getenv('SAFECIRCLE_DB_PATH', '/tmp/safecircle.db'))
+    if not path.is_absolute() or str(path).startswith('/tmp/'):
+        raise RuntimeError('Set SAFECIRCLE_DB_PATH to an absolute path on a persistent mounted volume')
+    from .server_crypto import _key
+    _key()
+    if not os.getenv('SAFECIRCLE_PUBLIC_BASE_URL', '').startswith('https://'):
+        raise RuntimeError('Production requires an HTTPS public base URL')

@@ -30,6 +30,8 @@ class PushWebhookProvider:
         body = json.dumps(payload).encode()
         request = urllib.request.Request(self.url, data=body, method="POST")
         request.add_header("Content-Type", "application/json")
+        if payload.get("delivery_id"):
+            request.add_header("Idempotency-Key", str(payload["delivery_id"]))
         if self.secret:
             request.add_header("Authorization", "Bearer " + self.secret)
         try:
@@ -54,16 +56,15 @@ class TwilioSmsProvider:
     def configured(self) -> bool:
         return bool(self.sid and self.token and self.from_number)
 
-    def send(self, to_number: str, message: str) -> DeliveryResult:
+    def send(self, to_number: str, message: str, callback_url: str | None = None) -> DeliveryResult:
         if not self.configured:
             return DeliveryResult("twilio_sms", False, error="not configured")
 
         url = f"https://api.twilio.com/2010-04-01/Accounts/{self.sid}/Messages.json"
-        data = urllib.parse.urlencode({
-            "From": self.from_number,
-            "To": to_number,
-            "Body": message,
-        }).encode()
+        fields = {"From": self.from_number, "To": to_number, "Body": message}
+        if callback_url:
+            fields["StatusCallback"] = callback_url
+        data = urllib.parse.urlencode(fields).encode()
         request = urllib.request.Request(url, data=data, method="POST")
         basic = base64.b64encode(f"{self.sid}:{self.token}".encode()).decode()
         request.add_header("Authorization", "Basic " + basic)

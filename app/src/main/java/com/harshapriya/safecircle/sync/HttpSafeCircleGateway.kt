@@ -30,6 +30,7 @@ class HttpSafeCircleGateway(
             put("location_accuracy", payload.locationAccuracy ?: JSONObject.NULL)
             put("privacy_mode", payload.privacyMode)
             put("capsule", payload.capsuleJson?.let { raw -> runCatching { JSONObject(raw) }.getOrNull() } ?: JSONObject.NULL)
+            payload.guardianContactsJson?.let { put("guardian_contacts", JSONArray(it)) }
             put("resolved", payload.resolved)
             put("resolved_at", payload.resolvedAt ?: JSONObject.NULL)
         }
