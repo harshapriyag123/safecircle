@@ -1,0 +1,23 @@
+const {chromium}=require('playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ const page=await browser.newPage({viewport:{width:720,height:720}});
+ const failures=[];page.on('pageerror',e=>failures.push(e.message));
+ await page.goto('http://127.0.0.1:8080/site/demo.html?stage=5');
+ if(!(await page.locator('#status').innerText()).includes('overdue'))throw Error('Stage 5 missing');
+ await page.screenshot({path:'web/site/assets/guardian-demo.png'});
+ for(const stage of ['10','15','safe'])await page.locator(`[data-stage="${stage}"]`).click();
+ if(await page.locator('#status').innerText()!=='Marked safe')throw Error('Resolution demo failed');
+ await page.goto('http://127.0.0.1:8080/');
+ if(!page.url().endsWith('/site/'))throw Error('Landing redirect missing');
+ await page.screenshot({path:'web/site/assets/landing-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:'web/site/assets/landing-mobile.png',fullPage:true});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Mobile overflow');
+ await page.goto('http://127.0.0.1:8080/guardian/');
+ if(!(await page.locator('#explain').innerText()).includes('No Guardian token'))throw Error('Guardian fallback leaked');
+ await page.goto('http://127.0.0.1:8080/site/privacy.html');
+ if(!(await page.title()).includes('Privacy'))throw Error('Privacy policy missing');
+ if(failures.length)throw Error(failures.join('\n'));
+ await browser.close();console.log('Desktop/mobile landing, demo stages, privacy and no-token Guardian checks passed.');
+})();

@@ -13,3 +13,6 @@ local.properties
 __pycache__/
 *.py[cod]
 .pytest_cache/
+
+# Website verification dependencies
+node_modules/

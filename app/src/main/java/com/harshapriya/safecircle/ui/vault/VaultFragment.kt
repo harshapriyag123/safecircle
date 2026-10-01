@@ -39,7 +39,7 @@ class VaultFragment : Fragment() {
 
         root.findViewById<MaterialButton>(R.id.createCapsuleButton).setOnClickListener { createCapsule() }
         SubscriptionManager.refresh()
-        root.findViewById<MaterialButton>(R.id.privacyModeButton).setOnClickListener { requirePro { choosePrivacy() } }
+        root.findViewById<MaterialButton>(R.id.privacyModeButton).setOnClickListener { choosePrivacy() }
         root.findViewById<MaterialButton>(R.id.purgeCapsuleButton).setOnClickListener {
             store.purgeExpired()
             Toast.makeText(requireContext(), "Expired capsules purged", Toast.LENGTH_SHORT).show()
@@ -85,10 +85,10 @@ class VaultFragment : Fragment() {
         val json = JSONObject().apply {
             put("sessionId", base.sessionId)
             put("mode", session.mode.name)
-            put("battery", if (config.shareBatteryOnEscalation) session.batteryPercent else JSONObject.NULL)
+            put("batteryPercent", if (config.shareBatteryOnEscalation) session.batteryPercent else JSONObject.NULL)
             put("location", if (config.locationMode == LocationPrivacyMode.STATUS_ONLY) JSONObject.NULL else base.lastKnownLocationLabel)
-            put("destination", if (config.shareDestinationOnEscalation) base.destinationLabel else JSONObject.NULL)
-            put("instructions", base.guardianInstructions)
+            put("destinationLabel", if (config.shareDestinationOnEscalation) base.destinationLabel else JSONObject.NULL)
+            put("guardianInstructions", base.guardianInstructions)
             put("emergencyName", emergency.displayName.ifBlank { JSONObject.NULL })
             put("primaryContact", emergency.primaryContact.ifBlank { JSONObject.NULL })
             put("preferredLanguage", emergency.preferredLanguage)

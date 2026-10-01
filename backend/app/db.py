@@ -132,6 +132,12 @@ def init_db() -> None:
 
 def upsert_session(data: dict[str, Any]) -> None:
     now = int(time.time() * 1000)
+    capsule = data.get('capsule')
+    if isinstance(capsule, dict):
+        capsule = dict(capsule)
+        limit = now + 24 * 60 * 60_000
+        expiry = capsule.get('expiresAt')
+        capsule['expiresAt'] = min(expiry, limit) if isinstance(expiry, (int, float)) else limit
     with _lock, connect() as conn:
         conn.execute(
             """
@@ -169,7 +175,7 @@ def upsert_session(data: dict[str, Any]) -> None:
                 data.get("longitude"),
                 data.get("location_accuracy"),
                 data.get("privacy_mode", "PRECISE_ON_ESCALATION"),
-                encrypt_json(data.get("capsule")),
+                encrypt_json(capsule),
                 1 if data.get("resolved") else 0,
                 data.get("resolved_at"),
                 now,
@@ -178,6 +184,15 @@ def upsert_session(data: dict[str, Any]) -> None:
         if "guardian_contacts" in data:
             conn.execute("UPDATE sessions SET contacts_json=? WHERE id=?",
                          (encrypt_json({"contacts": data["guardian_contacts"]}), data["id"]))
+        if 'guardian_contacts' in data:
+            contacts = {item['role']: item for item in data['guardian_contacts'] if item.get('consented')}
+            jobs = conn.execute("SELECT id,role FROM delivery_jobs WHERE session_id=? AND channel='twilio_sms' AND status='queued'", (data['id'],)).fetchall()
+            for job in jobs:
+                contact = contacts.get(job['role'])
+                if contact:
+                    conn.execute('UPDATE delivery_jobs SET payload_json=? WHERE id=?', (encrypt_json({'phone': contact['phone']}), job['id']))
+                else:
+                    conn.execute("UPDATE delivery_jobs SET status='cancelled',updated_at=? WHERE id=?", (now, job['id']))
         conn.execute("UPDATE delivery_jobs SET status='cancelled',updated_at=? WHERE session_id=? "
                      "AND status IN ('queued','sending') AND (?=1 OR deadline!=?)",
                      (now, data["id"], int(bool(data.get("resolved"))), data["expected_end_at"]))

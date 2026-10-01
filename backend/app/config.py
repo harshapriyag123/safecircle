@@ -11,6 +11,12 @@ def validate_production_config() -> None:
                or 'replace-with' in os.getenv(key, '')]
     if missing:
         raise RuntimeError('Production requires independent configured secrets: ' + ', '.join(missing))
+    if any(len(os.environ[key]) < 32 for key in required):
+        raise RuntimeError("Production secrets must have at least 32 characters")
+    if os.getenv("SAFECIRCLE_PUSH_WEBHOOK_URL") and (not os.getenv("SAFECIRCLE_PUSH_WEBHOOK_URL", "").startswith("https://") or len(os.getenv("SAFECIRCLE_DELIVERY_RECEIPT_SECRET", "")) < 32):
+        raise RuntimeError("Push requires HTTPS and an independent receipt secret")
+    if "*" in os.getenv("SAFECIRCLE_ALLOWED_ORIGINS", ""):
+        raise RuntimeError("Production CORS origins must be explicit")
     secrets = [os.environ[key] for key in required]
     if len(set(secrets)) != len(secrets):
         raise RuntimeError('Production secrets must be independent')

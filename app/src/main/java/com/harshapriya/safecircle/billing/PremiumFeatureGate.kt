@@ -15,9 +15,10 @@ object PremiumFeatureGate {
         return when (feature) {
             PremiumFeature.UNLIMITED_SESSIONS,
             PremiumFeature.MULTIPLE_GUARDIANS,
+            PremiumFeature.SAFETY_CAPSULE_CONTROLS -> true
+
             PremiumFeature.ADVANCED_AUTOMATIONS,
             PremiumFeature.SAFE_PHRASE,
-            PremiumFeature.SAFETY_CAPSULE_CONTROLS,
             PremiumFeature.FAMILY_CIRCLES,
             PremiumFeature.EXTENDED_HISTORY -> isPro
         }

@@ -147,3 +147,18 @@ def test_receipts_are_authenticated_and_owner_scoped(isolated_db, monkeypatch):
         assert db.get_delivery(job)['status'] == 'delivered'
         assert client.get('/v1/sessions/' + s['id'] + '/deliveries',
                           headers={'Authorization': 'Bearer ' + sign_access_token('another_owner')}).status_code == 403
+
+
+def test_revoking_consent_cancels_pending_sms(isolated_db):
+    s, now = make_session()
+    schedule_escalations(s, now)
+    s['guardian_contacts'] = []
+    db.upsert_session(s)
+    assert all(j['status'] == 'cancelled' for j in db.delivery_status(s['id']) if j['channel'] == 'twilio_sms')
+
+
+def test_missing_capsule_expiry_is_bounded(isolated_db):
+    s, now = make_session()
+    s['capsule'] = {'instruction': 'Call first'}
+    db.upsert_session(s)
+    assert db.get_session(s['id'])['capsule']['expiresAt'] <= now + 86_400_100

@@ -32,6 +32,12 @@ def process_delivery(current: int) -> bool:
         return True
     message = f"SafeCircle: {session['mode']} check-in is overdue. Please check on your trusted contact."
     if job['channel'] == 'twilio_sms':
+        contacts = {item['role']: item for item in session.get('guardian_contacts', []) if item.get('consented')}
+        contact = contacts.get(job['role'])
+        if not contact:
+            db.finish_delivery(job['id'], 'cancelled', current, attempted=False)
+            return True
+        job['payload']['phone'] = contact['phone']
         provider = TwilioSmsProvider()
         base = os.getenv('SAFECIRCLE_PUBLIC_BASE_URL', '').rstrip('/')
         callback = base + '/v1/delivery-receipts/twilio/' + job['id'] if base.startswith('https://') else None

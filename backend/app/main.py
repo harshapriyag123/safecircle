@@ -135,7 +135,7 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
         isinstance(capsule_expiry, (int, float)) and capsule_expiry > now_ms()
     )
     if stage is not None and stage >= 15 and capsule_current:
-        allowed = {"sessionId", "createdAt", "expiresAt", "destinationLabel", "batteryPercent",
+        allowed = {"sessionId", "createdAt", "expiresAt", "destinationLabel", "batteryPercent", "destination", "battery", "instructions",
                    "guardianInstructions", "instruction"}
         result["safety_capsule"] = {key: value for key, value in (capsule or {}).items() if key in allowed}
     else:
@@ -232,6 +232,12 @@ webapp_static = next((path for path in webapp_candidates if path.exists()), None
 if webapp_static is not None:
     app.mount("/app", StaticFiles(directory=webapp_static, html=True), name="webapp")
 
+
+site_static = Path(__file__).resolve().parent.parent.parent / "web" / "site"
+if not site_static.exists():
+    site_static = Path(__file__).resolve().parent.parent / "web" / "site"
+if site_static.exists():
+    app.mount("/site", StaticFiles(directory=site_static, html=True), name="site")
 
 @app.post("/v1/auth/register")
 def register(body: RegisterRequest) -> dict[str, Any]:
@@ -530,6 +536,9 @@ def revenuecat_webhook(
         enqueue_reconciliation(customer, now_ms())
     if not app_user_id:
         return {'ok': True, 'reconciliation_queued': True, 'event_type': event_type}
+
+    if os.getenv("SAFECIRCLE_ENV") == "production" and event.get("environment") == "SANDBOX":
+        return {"ok": True, "ignored": True, "reason": "sandbox_event"}
 
     supported_types = {
         "INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE", "UNCANCELLATION",

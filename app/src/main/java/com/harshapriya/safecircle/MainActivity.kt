@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity(), PaywallResultHandler {
     }
 
     override fun onActivityResult(result: PaywallResult) {
+        com.harshapriya.safecircle.billing.SubscriptionManager.refresh()
         when (result) {
             is PaywallResult.Purchased -> Toast.makeText(this, "SafeCircle+ activated", Toast.LENGTH_SHORT).show()
             is PaywallResult.Restored -> Toast.makeText(this, "Purchase restored", Toast.LENGTH_SHORT).show()
