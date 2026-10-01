@@ -7,7 +7,7 @@ settings:
 packages:
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios.git
-    exactVersion: 5.16.0
+    exactVersion: 5.92.0
 targets:
   SafeCircleIOS:
     type: application
