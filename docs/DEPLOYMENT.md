@@ -1,6 +1,6 @@
 # Deployment and delivery contract
 
-The existing root Dockerfile runs `app.entrypoint:app` and serves API, landing site, web companion and Guardian routes. Deploy the reviewed `shipaton/completion` commit to the existing Railway service, then verify `/health`, root redirect, `/site/privacy.html`, signed Guardian flow and a restart preserving the database. The known origin is `https://safecircle-production-5a32.up.railway.app`; new-branch deployment is not yet verified.
+The existing root Dockerfile runs `app.entrypoint:app` and serves API, landing site, web companion and Guardian routes. Deploy the reviewed `shipaton/completion` commit to the existing Railway service, then verify `/health`, root redirect, `/site/privacy.html`, signed Guardian flow and a restart preserving the database. The known origin is `https://safecircle-production-5a32.up.railway.app`; new-branch deployment is not yet verified. An unauthenticated check on October 1 returned HTTP 404 from both `/health` and `/site/`; inspect the connected Railway project/service and its current domain before changing Android defaults or claiming the site is live.
 
 ## Required production configuration
 

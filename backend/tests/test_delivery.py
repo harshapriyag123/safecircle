@@ -122,9 +122,13 @@ def test_late_checkin_gives_five_minute_grace_and_cancels_jobs(isolated_db):
         assert response.status_code == 200
         assert response.json()['session']['expected_end_at'] >= now + 5 * 60_000
         assert all(j['status'] == 'cancelled' for j in db.delivery_status(s['id']))
+        s.update(state='ESCALATED', latitude=32.12345, longitude=-97.12345, privacy_mode='PRECISE_ON_ESCALATION')
         stale = client.post('/v1/sessions', json=s, headers=headers)
         assert stale.status_code == 200
         assert db.get_session(s['id'])['expected_end_at'] >= now + 5 * 60_000
+        canonical = db.get_session(s['id'])
+        assert canonical['state'] == 'NORMAL'
+        assert public_snapshot(canonical, 'primary')['location'] is None
 
 
 def test_sms_contacts_require_explicit_consent(isolated_db):

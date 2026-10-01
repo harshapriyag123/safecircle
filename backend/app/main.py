@@ -322,7 +322,13 @@ def upsert_session(
 
     data = body.model_dump()
     if existing is not None:
-        # Offline snapshots cannot move an acknowledged deadline backwards.
+        # A snapshot from an earlier deadline/check-in cannot undo a fresh check-in
+        # or restore sensitive fields/consent that the canonical session changed.
+        stale = body.expected_end_at < existing['expected_end_at'] or body.last_check_in_at < existing['last_check_in_at']
+        if stale:
+            for field in ('state', 'privacy_mode', 'capsule', 'guardian_contacts', 'share_battery_on_escalation', 'share_destination_on_escalation'):
+                data[field] = existing.get(field)
+        data['last_check_in_at'] = max(body.last_check_in_at, existing['last_check_in_at'])
         data["expected_end_at"] = max(data["expected_end_at"], existing["expected_end_at"])
         if body.last_check_in_at > existing["last_check_in_at"] and data["expected_end_at"] <= now_ms():
             data["expected_end_at"] = now_ms() + 5 * 60_000
