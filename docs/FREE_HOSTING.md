@@ -2,7 +2,7 @@
 
 ## Public preview — deployed
 
-https://safecircle-public-preview.harsha9944.chatgpt.site/site/
+https://safecircle-site.vercel.app/site
 
 Published October 1, 2026 through Sites, without Railway or a new paid hosting plan. Hosting reported success; the deployment is public. Includes landing page, screenshots, labeled simulated Guardian demo, privacy, support and APK links.
 
@@ -43,3 +43,15 @@ Render is an available plugin, but connection was not confirmed. Its free web se
 A suitable always-running host with persistent storage (your own computer is one option), or approved account access for a compatible hosting service, is still needed for end-to-end shared sessions. RevenueCat/store configuration, provider credentials and store/video eligibility requirements remain in `EXTERNAL_REQUIREMENTS.md`.
 
 References: [Cloudflare Quick Tunnels](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/), [Render free limitations](https://render.com/docs/free), [Render persistent disks](https://render.com/docs/disks).
+
+## Vercel deployment evidence — October 1, 2026
+
+Published through Vercel Drop in the Harsha Hacks Hobby workspace. Only eight static public files were uploaded; no credentials, account database or backend code were uploaded. The corrected production project is `safecircle-site`; `safecircle-public` is the earlier upload with broken relative links and is superseded. No paid resources or plan changes were made.
+
+Verified in the public browser: landing page, CSS and screenshot load; simulated +10-minute Backup Guardian stage; simulated Marked safe state; privacy page. The export sets an explicit `/site/` base so relative assets and links survive Vercel clean URLs. This upload is not Git-connected: subsequent changes require an explicit upload or configured Git deployment.
+
+Live website: https://safecircle-site.vercel.app/site
+
+Simulated demo: https://safecircle-site.vercel.app/site/demo
+
+Accounts, actual signed Guardian sessions, persistent jobs and real delivery remain unavailable on this static website. RevenueCat billing remains native and requires store/account configuration.

@@ -10,6 +10,8 @@ def export(output: Path):
     pages.mkdir(parents=True, exist_ok=True)
     shutil.copytree(repo / 'web/site', pages, dirs_exist_ok=True)
     (output / 'index.html').write_text('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/site/"><title>SafeCircle</title></head><body><a href="/site/">Open SafeCircle</a></body></html>')
+    for page in pages.glob('*.html'):
+        page.write_text(page.read_text().replace('<head>', '<head><base href="/site/">', 1))
     requirements = 'https://github.com/harshapriyag123/safecircle/blob/shipaton/completion/docs/EXTERNAL_REQUIREMENTS.md'
     index = pages / 'index.html'
     text = index.read_text().replace('href="/app/v4.html"', f'href="{requirements}"')
