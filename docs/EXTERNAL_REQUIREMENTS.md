@@ -9,7 +9,7 @@ continuous monitoring or delivery. No Railway setup is required.
    Workers Free account to provision `scheduler/cloudflare`, or supply another
    reviewed free platform capable of minute-level execution. The adapter and
    tests are complete; deployment and at least two platform-scheduled ticks are
-   not verified. Manual diagnostic ticks are not a scheduler. Track Vercel/Neon/
+   not verified. Cloudflare dashboard access was blocked by its browser security verification; use an authorized account/CLI route once access is available. Manual diagnostic ticks are not a scheduler. Track Vercel/Neon/
    Cloudflare free quotas; exhausted quotas can pause service. No paid overage,
    payment method or automatic upgrade is authorized. Continuous database traffic
    consumes Neon compute allowance and cannot be promised indefinitely for $0.

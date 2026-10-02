@@ -71,3 +71,16 @@ Local backend: 72 passed, 2 PostgreSQL-only skips. Tests exercise missing adapte
 Android follow-up adds an emulator regression for preserving the active session identity after another start attempt and checks the local/unverified monitoring label. Final-head Android CI must pass before treating that check as evidence.
 
 Receipt validation also covers nested array/object status values; authenticated malformed JSON returns 422 rather than a server error.
+
+## Verified provider/native follow-up evidence
+
+Implementation head `0a5f4498031427c3939f51058d0da549519e9966` passed all four workflows:
+
+- [Android tests, lint, assembly and emulator](https://github.com/harshapriyag123/safecircle/actions/runs/36963767575): the attempted second start preserved the unresolved session identity; the local/unverified label, check-in, ETA extension and resolution passed. Updated screenshots under `docs/screenshots/` come from this run.
+- [Backend](https://github.com/harshapriyag123/safecircle/actions/runs/36963767564): 74 PostgreSQL tests and 72 SQLite tests (2 PostgreSQL-only skips) passed; three scheduler adapter tests passed in each matrix job. These are adapter tests, not observed scheduled execution.
+- [Website](https://github.com/harshapriyag123/safecircle/actions/runs/36963767574): companion and Guardian browser regressions passed.
+- [iOS](https://github.com/harshapriyag123/safecircle/actions/runs/36963767585): simulator compilation passed; no simulator interaction, physical-device or store purchase verification is inferred.
+
+[Debug APK](https://github.com/harshapriyag123/safecircle/actions/runs/36963767575/artifacts/11209057806): 20,635,412 bytes, SHA-256 `56451a666d378c72fcf11adfccfe7d4e67179b970953904d296c11acca5fad1b`. Native DEX contains the deployed Vercel API origin. Actions built the synthetic PR merge `53aa0a5bd2255a23b56bbd1fc26079815c2d4292` for this implementation head.
+
+Vercel deployment `9H4Tiz9Hf8qDSqijBm3de3RN4Xvd` was observed Ready, Current Production, with source `0a5f449` and the preserved public domain. Public landing/privacy/companion routes returned 200; unauthenticated worker and push receipt requests returned 401. Health returned 503 with `backend_ready=true`, `worker_ready=false`, correctly blocking monitored session creation. The documentation follow-up has no runtime changes; its exact CI/deployment head is recorded on PR #2 after validation.

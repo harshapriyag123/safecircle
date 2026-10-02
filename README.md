@@ -5,7 +5,7 @@
 <p align="center"><strong>Temporary safety check-ins. A trusted circle. Privacy on your terms.</strong></p>
 <p align="center">
   <a href="#screenshots">Screenshots</a> ·
-  <a href="https://github.com/harshapriyag123/safecircle/actions/runs/36947929871/artifacts/11202692715">Download debug APK</a> ·
+  <a href="https://github.com/harshapriyag123/safecircle/actions/workflows/android.yml">Download debug APK</a> ·
   <a href="https://safecircle-site.vercel.app/site">Public preview</a> ·
   <a href="docs/SHIPATON.md">Shipaton checklist</a> ·
   <a href="https://github.com/harshapriyag123/safecircle/pull/2">Implementation PR</a>
@@ -57,8 +57,8 @@ The [website demo screenshot](web/site/assets/guardian-demo.png) depicts a ficti
 
 | Area | Verified evidence | Still needed |
 | --- | --- | --- |
-| Backend | 51 SQLite tests and PostgreSQL CI passed | Redeployment persistence and real provider delivery |
-| Android | 11 unit tests, lint (0 errors; 414 warnings), debug APK and Android 15 offline workflow passed | Store test track, billing configuration and physical-device background tests |
+| Backend | 72 SQLite tests (2 PostgreSQL-only skips), 74 PostgreSQL tests and controlled redeployment persistence passed | Continuous scheduler and real provider delivery |
+| Android | Unit tests, lint, debug APK and Android 15 offline workflow passed, including unresolved-session identity preservation | Store test track, billing configuration and physical-device background tests |
 | iOS reference client | Simulator build with RevenueCat/RevenueCatUI passed | Signing, device purchases and full Android feature parity |
 | Web/Guardian | Desktop/mobile browser checks, signed acknowledgement/resolution and privacy checks passed | Continuous scheduler/provider checks and native demo video |
 | RevenueCat | SDK and server lifecycle/reconciliation code checked | Actual offerings/products, purchases, restore and Customer Center verification |
@@ -108,7 +108,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 Android CI repeats these tasks and uploads the APK and reports. Download the latest successful PR run's `safecircle-debug-*` ZIP from [Actions](https://github.com/harshapriyag123/safecircle/actions/workflows/android.yml); unzip `app-debug.apk`. Artifacts expire after 30 days and downloads require GitHub sign-in. Debug installation does not qualify as a public store release.
 
-Sign in, create a session and configure distinct E.164 Primary/Backup phone contacts only with their consent. Guardian link creation and SMS provider delivery are separate operations. External notifications require production provider configuration. Use test participants until delivery and background-device behavior are verified.
+The Android start flow is explicitly labeled local, with shared Guardian monitoring unverified. An unresolved session cannot be silently replaced. Server-monitored session creation remains blocked while the deployed worker is unavailable. Sign in and configure distinct E.164 Primary/Backup phone contacts only with their consent. Guardian link creation and SMS provider delivery are separate operations. External notifications require production provider configuration. Use test participants until delivery and background-device behavior are verified.
 
 ## Backend and website
 
