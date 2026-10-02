@@ -26,12 +26,12 @@ def fetch_subscriber(customer: str, key: str) -> dict:
         return json.load(response)['subscriber']
 
 
-def reconcile_pending(current: int) -> int:
+def reconcile_pending(current: int, limit: int = 10) -> int:
     key = os.getenv('REVENUECAT_SECRET_API_KEY', '')
     if not key:
         return 0
     with db.connect() as conn:
-        jobs = conn.execute('SELECT * FROM subscription_reconcile_jobs WHERE next_attempt_at<=? LIMIT 10', (current,)).fetchall()
+        jobs = conn.execute('SELECT * FROM subscription_reconcile_jobs WHERE next_attempt_at<=? LIMIT ?', (current, limit)).fetchall()
     refreshed = 0
     for job in jobs:
         try:

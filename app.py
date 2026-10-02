@@ -5,6 +5,7 @@ but refuse every backend request. Never create an ephemeral safety database.
 """
 import asyncio
 import os
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -36,12 +37,19 @@ async def lifespan(application):
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 
+async def worker_current():
+    try:
+        return await asyncio.to_thread(db.worker_is_current, time.time_ns() // 1_000_000)
+    except Exception:
+        return False
+
+
 @app.middleware('http')
 async def readiness_guard(request: Request, call_next):
     path = request.url.path
     ready = getattr(app.state, 'backend_ready', False)
     if path == '/health':
-        worker_ready = ready and await asyncio.to_thread(db.worker_is_current, __import__('time').time_ns() // 1_000_000)
+        worker_ready = ready and await worker_current()
         return JSONResponse({'status': 'ok' if worker_ready else 'not_ready',
                              'backend_ready': ready, 'worker_ready': bool(worker_ready)},
                             status_code=200 if worker_ready else 503,
@@ -50,8 +58,7 @@ async def readiness_guard(request: Request, call_next):
         if not ready:
             return JSONResponse({'detail': 'Backend configuration pending: persistent database and production secrets'},
                                 status_code=503, headers={'Cache-Control': 'no-store'})
-        if request.method == 'POST' and path == '/v1/sessions' and not await asyncio.to_thread(
-                db.worker_is_current, __import__('time').time_ns() // 1_000_000):
+        if request.method == 'POST' and path == '/v1/sessions' and not await worker_current():
             return JSONResponse({'detail': 'Alert worker unavailable; a monitored session cannot start'}, status_code=503)
     return await call_next(request)
 

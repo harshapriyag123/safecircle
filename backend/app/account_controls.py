@@ -47,6 +47,6 @@ def allow_request(identity: str, current: int, limit: int) -> bool:
     digest = hashlib.sha256(identity.encode()).hexdigest()
     with db._lock, db.connect() as conn:
         conn.execute('DELETE FROM request_limits WHERE bucket<?', (bucket - 2,))
-        conn.execute('INSERT INTO request_limits VALUES(?,?,1) ON CONFLICT(identity,bucket) DO UPDATE SET count=count+1', (digest, bucket))
+        conn.execute('INSERT INTO request_limits VALUES(?,?,1) ON CONFLICT(identity,bucket) DO UPDATE SET count=request_limits.count+1', (digest, bucket))
         count = conn.execute('SELECT count FROM request_limits WHERE identity=? AND bucket=?', (digest, bucket)).fetchone()[0]
     return count <= limit

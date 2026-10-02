@@ -184,12 +184,12 @@ async def worker_tick() -> None:
     current = now_ms()
     for session in db.active_sessions():
         schedule_escalations(session, current)
-    for _ in range(50):
+    for _ in range(3 if os.getenv("SAFECIRCLE_WORKER_MODE") == "external" else 50):
         if not await asyncio.to_thread(process_delivery, now_ms()):
             break
     db.purge_expired_capsules(current)
     from .revenuecat import reconcile_pending
-    await asyncio.to_thread(reconcile_pending, current)
+    await asyncio.to_thread(reconcile_pending, current, 2 if os.getenv("SAFECIRCLE_WORKER_MODE") == "external" else 10)
     db.record_worker_tick(now_ms())
 
 
