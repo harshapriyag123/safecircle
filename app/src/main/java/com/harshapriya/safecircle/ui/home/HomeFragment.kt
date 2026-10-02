@@ -106,7 +106,7 @@ class HomeFragment : Fragment() {
 
         readiness.text = snapshot.score.toString() + "/100"
         stateView.text = snapshot.state.name.replace('_', ' ')
-        summary.text = snapshot.reasons.joinToString("  •  ")
+        summary.text = "Local session · Shared Guardian monitoring unverified.\n" + snapshot.reasons.joinToString("  •  ")
         val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(session.expectedEndAt))
         root.findViewById<TextView>(R.id.activeSessionTitle).text = session.mode.label
         val destination = session.destinationLabel?.let { " · $it" } ?: ""

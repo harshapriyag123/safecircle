@@ -34,8 +34,9 @@ class SafetyRepository(private val context: Context) {
         val now = System.currentTimeMillis()
         val safeDuration = durationMinutes.coerceIn(5, 24 * 60)
         currentSession()?.takeIf { !it.resolved }?.let { active ->
-            scheduler.cancel(active.id)
-            audit.append(AuditEvent(now, "SESSION_REPLACED", active.id, "new session started"))
+            // Replacing local state does not resolve the old server session.
+            // Preserve its deadline, jobs and history until explicitly resolved.
+            return active
         }
         val session = SafetySession(
             id = UUID.randomUUID().toString(),

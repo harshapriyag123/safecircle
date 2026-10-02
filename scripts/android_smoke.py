@@ -46,6 +46,18 @@ if PACKAGE not in adb('shell','dumpsys','jobscheduler'):
 screenshot('native-home.png')
 tap('startSessionButton'); tap('startConfiguredSessionButton')
 screenshot('native-active-session.png')
+def session_identity():
+    prefs = ET.fromstring(adb('shell', 'run-as', PACKAGE, 'cat', 'shared_prefs/safecircle.xml'))
+    return next(node.text for node in prefs if node.get('name') == 'session_id')
+original_session_id = session_identity()
+if not any('Shared Guardian monitoring unverified' in node.get('text', '') for node in ui().iter('node')):
+    raise RuntimeError('Local session must not imply verified shared monitoring')
+tap('startSessionButton'); tap('startConfiguredSessionButton')
+if not any(node.get('resource-id') == PACKAGE + ':id/startConfiguredSessionButton' for node in ui().iter('node')):
+    raise RuntimeError('An unresolved session was replaced instead of remaining in setup')
+if session_identity() != original_session_id:
+    raise RuntimeError('Starting another session erased the active session identity')
+adb('shell', 'input', 'keyevent', '4'); time.sleep(2)
 tap('checkInButton'); tap('extend5Button'); tap('safeButton')
 adb('shell','input','swipe','540','650','540','1800','500'); time.sleep(2)
 if not any(node.get('text')=='RESOLVED' for node in ui().iter('node')):

@@ -118,7 +118,7 @@ python -m venv .venv
 pip install -r backend/requirements.txt
 cd backend
 PYTHONPATH=. python -m pytest tests -q
-PYTHONPATH=backend python -m uvicorn app.entrypoint:app --port 8080
+PYTHONPATH=. python -m uvicorn app.entrypoint:app --port 8080
 ```
 
 Configure variables from `backend/.env.example` in the process environment (the file is a template, not automatically loaded). `/` redirects to `/site/`; `/app/v4.html` is the companion; `/guardian/?token=...` is a real Guardian view requiring a signed link. `/site/demo.html` is explicitly simulated and sends no notifications. `/site/privacy.html` describes current data handling. The video section truthfully marks the native recording as pending.

@@ -67,3 +67,5 @@ service is not used or required for this deployment.
 ## Provider safeguards follow-up — 2026-10-02 UTC
 
 Local backend: 70 passed, 2 PostgreSQL-only skips. Tests exercise missing adapter authentication, unsafe URLs, redirect refusal, response/error redaction, malformed receipts and independent production secrets alongside the existing lifecycle/privacy/outbox suite. Three scheduler adapter tests passed; these also run in backend CI. No real providers were contacted. Removed unused legacy direct SMS code that read capsule contacts without current Guardian consent; durable stage-specific jobs remain the sole escalation path. Final commit CI and deployment evidence are recorded on PR #2 after checks finish.
+
+Android follow-up adds an emulator regression for preserving the active session identity after another start attempt and checks the local/unverified monitoring label. Final-head Android CI must pass before treating that check as evidence.

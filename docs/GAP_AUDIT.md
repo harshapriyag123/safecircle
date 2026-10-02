@@ -49,3 +49,5 @@ loaded into iOS editors rather than silently replaced by empty controls.
 ## Provider safeguards follow-up
 
 Authenticated push adapters now require a credential-free HTTPS destination and independent 32+ character outbound/receipt secrets. Redirects are refused and arbitrary provider responses/errors are not persisted. Removed the unused legacy capsule-phone sending path; all escalation sends use consent-aware durable jobs. Malformed authenticated push receipts return validation errors. Production registration/push delivery still needs an opted-in provider/device service; no delivery claim is made.
+
+Android follow-up: starting another session preserves the unresolved session rather than silently abandoning its server jobs. Setup enforces the documented 5–1440 minute range. Native Home/setup explicitly label local sessions and unverified shared monitoring. Emulator smoke checks the unchanged session identity after a second start attempt. Physical monitoring still requires separate verification.

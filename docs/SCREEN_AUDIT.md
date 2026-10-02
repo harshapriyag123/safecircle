@@ -6,7 +6,7 @@ are separate evidence. No claim that every platform has feature parity is made.
 
 | Screen | Implemented behavior | Verification limits |
 |---|---|---|
-| Android Today/session setup | Local safety session, check-in, ETA extension, terminal resolution, background work and authenticated sync | Emulator CI; physical-device suspension/reconnect and live providers pending |
+| Android Today/session setup | Explicitly local session, check-in, ETA extension, terminal resolution, background work and authenticated sync; an unresolved session cannot be overwritten; duration limited to 5–1440 minutes | Shared Guardian monitoring explicitly unverified; server creation blocked without worker readiness. Emulator CI; physical-device suspension/reconnect and live providers pending |
 | Android Circle/Guardian journey | Primary/Backup contacts, signed links, session-scoped Guardian views/actions/timeline | Consenting provider delivery/device registration pending |
 | Android Vault/history | Privacy choices, encrypted capsule, expiry and receipts | Production provider retention/backup deletion needs operator verification |
 | Android Automate/toolkit | Rule builder, phrase, exit aid, diagnostics and labeled Judge simulation | Advanced convenience billing unverified |
