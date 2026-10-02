@@ -58,3 +58,10 @@ def test_postgres_claim_is_atomic_across_independent_connections():
         assert len([job for job in claims if job is not None]) == 1
     finally:
         db._lock = saved
+
+
+@pytest.mark.skipif(not os.getenv('SAFECIRCLE_TEST_DATABASE_URL'), reason='Needs PostgreSQL')
+def test_pool_connection_timeouts_are_transaction_local():
+    with db.connect() as conn:
+        assert conn.execute('SHOW statement_timeout').fetchone()[0] == '15s'
+        assert conn.execute('SHOW lock_timeout').fetchone()[0] == '10s'

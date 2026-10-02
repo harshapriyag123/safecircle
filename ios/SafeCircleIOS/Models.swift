@@ -50,3 +50,10 @@ struct GuardianInviteResponse: Codable {
         case guardianUrl = "guardian_url"
     }
 }
+
+struct HistoryEntry: Identifiable, Decodable {
+    let id: String
+    let mode: String
+    let resolvedAt: Date
+    enum CodingKeys: String, CodingKey { case id, mode; case resolvedAt = "resolved_at" }
+}

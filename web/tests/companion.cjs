@@ -36,7 +36,7 @@ const assert=require('node:assert/strict');
  await page.locator('#checkBtn').click();
  await page.waitForFunction(t=>JSON.parse(localStorage.getItem('safecircle_web_v4')).active.expectedSafeAt===t,canonical.expected_end_at);
  await page.unroute('**/v1/sessions/'+initial.id+'/check-in');
- await page.getByRole('button',{name:/^Guardian Operations/}).click();
+ await page.getByRole('button',{name:/Guardian Operations/}).click();
  await page.locator('#backupGuardian').click();
  await page.getByRole('heading',{name:'Backup Guardian link',exact:true}).waitFor();
  await page.locator('#primaryGuardian').click();

@@ -37,6 +37,7 @@ struct SafeCircleAPI {
             "privacy_mode": UserDefaults.standard.string(forKey: "location_privacy") ?? "STATUS_ONLY",
             "resolved": session.resolved
         ]
+        if let battery = session.batteryPercent { body["battery_percent"] = battery }
         if let destination = session.destination { body["destination"] = destination }
         try await post(path: "/v1/sessions", body: body, token: token)
     }
@@ -63,7 +64,7 @@ struct SafeCircleAPI {
         try await post(path: "/v1/sessions/\(sessionId)/resolve", body: [:], token: token)
     }
 
-    func createGuardianInvite(sessionId: String, ownerId: String, token: String) async throws -> GuardianInviteResponse {
+    func createGuardianInvite(sessionId: String, ownerId: String, role: String, token: String) async throws -> GuardianInviteResponse {
         var request = URLRequest(url: baseURL.appending(path: "/v1/guardian-invites"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -71,12 +72,49 @@ struct SafeCircleAPI {
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "session_id": sessionId,
             "owner_id": ownerId,
-            "role": "guardian",
+            "role": role,
             "ttl_minutes": 1440
         ])
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response, data: data)
         return try JSONDecoder().decode(GuardianInviteResponse.self, from: data)
+    }
+
+    func activeSession(token: String) async throws -> SafetySession? {
+        struct Envelope: Decodable { let session: SafetySession? }
+        let data = try await request(path: "/v1/me/active-session", token: token)
+        return try decoder.decode(Envelope.self, from: data).session
+    }
+
+    func history(token: String) async throws -> [HistoryEntry] {
+        struct Envelope: Decodable { let sessions: [HistoryEntry] }
+        return try decoder.decode(Envelope.self, from: await request(path: "/v1/me/history", token: token)).sessions
+    }
+
+    func session(_ id: String, token: String) async throws -> SafetySession {
+        try decoder.decode(SafetySession.self, from: await request(path: "/v1/sessions/\(id)", token: token))
+    }
+
+    func patch(_ id: String, body: [String: Any], token: String) async throws -> SafetySession {
+        struct Envelope: Decodable { let session: SafetySession }
+        let data = try await request(path: "/v1/sessions/\(id)", method: "PATCH", body: body, token: token)
+        return try decoder.decode(Envelope.self, from: data).session
+    }
+
+    private var decoder: JSONDecoder {
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .millisecondsSince1970
+        return decoder
+    }
+
+    private func request(path: String, method: String = "GET", body: [String: Any]? = nil, token: String) async throws -> Data {
+        var request = URLRequest(url: baseURL.appending(path: path))
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body { request.httpBody = try JSONSerialization.data(withJSONObject: body) }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data)
+        return data
     }
 
     private func post(path: String, body: [String: Any], token: String) async throws {

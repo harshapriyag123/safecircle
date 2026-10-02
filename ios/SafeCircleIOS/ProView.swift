@@ -20,7 +20,7 @@ struct ProView: View {
                 Section("Account") {
                     if let auth = model.auth {
                         Text(auth.userId).font(.caption)
-                        Button("Sign out") { Task { try? await model.api.logout(token: auth.accessToken); model.auth = nil; model.session = nil } }
+                        Button("Sign out") { Task { do { try await model.api.logout(token: auth.accessToken); model.auth = nil; model.session = nil; model.history = []; password = ""; model.message = "Signed out; local account data cleared." } catch { model.message = error.localizedDescription } } }
                         Button("Delete account", role: .destructive) { showDelete = true }
                     } else {
                         TextField("Email", text: $email).textInputAutocapitalization(.never)
@@ -31,9 +31,12 @@ struct ProView: View {
                                 model.isLoading = true
                                 defer { model.isLoading = false }
                                 do {
+                                    model.session = nil; model.history = []
                                     model.auth = try await (createAccount
                                         ? model.api.register(email: email, password: password)
                                         : model.api.login(email: email, password: password))
+                                    password = ""
+                                    await model.refresh()
                                 } catch {
                                     model.message = error.localizedDescription
                                 }
@@ -54,7 +57,7 @@ struct ProView: View {
                             guard let auth = model.auth else { return }
                             do {
                                 try await model.api.deleteAccount(email: email, password: deletePassword, token: auth.accessToken)
-                                model.auth = nil; model.session = nil; password = ""; deletePassword = ""
+                                model.auth = nil; model.session = nil; model.history = []; password = ""; deletePassword = ""
                                 model.message = "Account deleted. Store subscriptions must be cancelled separately."
                             } catch { model.message = error.localizedDescription }
                         }

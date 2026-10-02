@@ -74,10 +74,12 @@ class Connection:
 def open_connection(url, schema='public'):
     if not re.fullmatch(r'[a-z_][a-z0-9_]*', schema):
         raise RuntimeError('Invalid SAFECIRCLE_DB_SCHEMA')
-    conn = psycopg.connect(url, row_factory=dict_row, connect_timeout=10,
-                           options='-c statement_timeout=15000 -c lock_timeout=10000')
+    # Transaction-local settings also work with Neon/PgBouncer pooled URLs.
+    conn = psycopg.connect(url, row_factory=dict_row, connect_timeout=10)
     try:
         from psycopg import sql
+        conn.execute("SET LOCAL statement_timeout = '15s'")
+        conn.execute("SET LOCAL lock_timeout = '10s'")
         conn.execute(sql.SQL('SET LOCAL search_path TO {}').format(sql.Identifier(schema)))
         conn.execute('SELECT pg_advisory_xact_lock(1979042701)')
         return conn
