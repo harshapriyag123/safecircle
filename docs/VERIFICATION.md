@@ -52,7 +52,9 @@ dedicated Neon Free database and privately configured independent secrets.
 Controlled production API verification passed registration/login, invalid password,
 worker authorization and a manual tick, owned sessions, Primary/Backup signed
 links/actions, check-in/ETA, escalated privacy redaction, terminal resolution,
-server history and logout revocation. Fictional accounts/coordinates and no
+server history and logout revocation. Account/session/history persistence across
+redeployment, another owner denied access, expired capsule cleanup and all stage
+queues (zero attempts) with ETA cancellation also passed. Fictional accounts/coordinates and no
 notification contacts were used. See [deployment](VERCEL_DEPLOYMENT.md).
 
 Continuous monitoring remains blocked on an authorized free scheduler account;

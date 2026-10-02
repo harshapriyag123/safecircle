@@ -107,6 +107,8 @@ API tests used fictional accounts, synthetic coordinates and no notification
 contacts. Worker authorization, one manual tick, registration/login and invalid
 password rejection, signed Primary/Backup actions, canonical check-in/ETA,
 escalation privacy, resolution/read-only behavior, history and logout revocation
-passed on the requested Vercel origin. The test account is retained temporarily
-for a redeployment-persistence check. This does not establish an active scheduler,
+passed on the requested Vercel origin. The account/session/history survived a subsequent production redeployment.
+A second fictional owner was denied access. Additional manual diagnostic ticks
+verified +5/+10/+15 Primary/Backup queued jobs with zero provider attempts,
+expired capsule cleanup and ETA cancellation. This does not establish an active scheduler,
 provider delivery, store billing, physical-device behavior or unrestricted quotas.
