@@ -15,7 +15,7 @@ Checked October 1, 2026 against [official rules](https://revenuecat-shipaton-202
 | Testing access/promo if needed | CI debug APK exists. Play/App Store testing access and premium review access still need configuration. Demo does not prove a purchase. |
 | Next Gen exception | Conditional on active eligible student status, public source/demo and academic verification; guardian consent if a minor. User eligibility not confirmed. |
 | Public source | Existing public repository and reviewable PR #2. |
-| Public website/privacy/support | Public static preview published; real Guardian/backend deployment and complete native video remain pending. |
+| Public website/privacy/support | Full website/backend deployed on existing Vercel Hobby domain with dedicated Neon Free storage. Controlled production Guardian/API checks passed. Continuous scheduler, provider delivery and native premium video remain pending. |
 
 ## Two-minute native demo script
 
@@ -37,3 +37,8 @@ Leave optional sponsor categories blank unless the app actually implements and v
 ## Honest form fields
 
 RevenueCat Project ID: `proj5f7132ef`. Public product website must be the verified deployed `/site/` origin, not a RevenueCat dashboard URL. Store URLs, promo code, academic email, OneSignal ID and sponsor identifiers must be real or left blank where optional. For growth and feedback: “No verified launch metrics/customer feedback are available yet” until actual evidence exists. Never turn test purchases into revenue figures.
+
+The screen audit is in [SCREEN_AUDIT.md](SCREEN_AUDIT.md). The iOS client now
+implements basic server-backed lifecycle/history, role-specific links, consented
+contacts, privacy/capsules and device-local reminders. Simulator compilation is
+checked; full Android parity and physical/store verification remain incomplete.

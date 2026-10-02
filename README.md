@@ -5,7 +5,7 @@
 <p align="center"><strong>Temporary safety check-ins. A trusted circle. Privacy on your terms.</strong></p>
 <p align="center">
   <a href="#screenshots">Screenshots</a> ·
-  <a href="https://github.com/harshapriyag123/safecircle/actions/runs/36904874195/artifacts/11182798938">Download debug APK</a> ·
+  <a href="https://github.com/harshapriyag123/safecircle/actions/runs/36947929871/artifacts/11202692715">Download debug APK</a> ·
   <a href="https://safecircle-site.vercel.app/site">Public preview</a> ·
   <a href="docs/SHIPATON.md">Shipaton checklist</a> ·
   <a href="https://github.com/harshapriyag123/safecircle/pull/2">Implementation PR</a>
@@ -57,10 +57,10 @@ The [website demo screenshot](web/site/assets/guardian-demo.png) depicts a ficti
 
 | Area | Verified evidence | Still needed |
 | --- | --- | --- |
-| Backend | 50 SQLite tests and 51 PostgreSQL tests passed | Production persistence and real provider delivery |
+| Backend | 51 SQLite tests and PostgreSQL CI passed | Redeployment persistence and real provider delivery |
 | Android | 11 unit tests, lint (0 errors; 414 warnings), debug APK and Android 15 offline workflow passed | Store test track, billing configuration and physical-device background tests |
 | iOS reference client | Simulator build with RevenueCat/RevenueCatUI passed | Signing, device purchases and full Android feature parity |
-| Web/Guardian | Desktop/mobile browser checks, signed acknowledgement/resolution and privacy checks passed | Live production setup and complete native demo video |
+| Web/Guardian | Desktop/mobile browser checks, signed acknowledgement/resolution and privacy checks passed | Continuous scheduler/provider checks and native demo video |
 | RevenueCat | SDK and server lifecycle/reconciliation code checked | Actual offerings/products, purchases, restore and Customer Center verification |
 
 See [build evidence and checksums](docs/VERIFICATION.md), [gap audit](docs/GAP_AUDIT.md) and the single [external prerequisites list](docs/EXTERNAL_REQUIREMENTS.md). No downloads, revenue, customer feedback, store publication or successful live delivery/purchase is claimed.
@@ -71,7 +71,7 @@ The public product site is implemented under `web/site/`, with a landing page, s
 
 **Vercel website and backend code are deployed:** https://safecircle-site.vercel.app/site
 
-The repository branch `shipaton/completion` deploys automatically to the existing free Hobby project. Landing page, companion and signed Guardian client code are hosted together. A dedicated free Neon database and private production secrets are configured; new monitored sessions additionally require a current alert-worker heartbeat. Native defaults now use this origin, but live account, alert and purchase flows remain unverified. See [Vercel setup](docs/VERCEL_DEPLOYMENT.md).
+The repository branch `shipaton/completion` deploys automatically to the existing free Hobby project. Landing page, companion and signed Guardian client code are hosted together. A dedicated free Neon database and private production secrets are configured; new monitored sessions additionally require a current alert-worker heartbeat. Native defaults use this origin. Controlled production account/session/Guardian API checks passed using fictional accounts and a manual tick; continuous monitoring, real notifications and store purchases remain unverified. See [Vercel setup](docs/VERCEL_DEPLOYMENT.md).
 
 Run locally at `http://localhost:8080/site/`; open the companion at `http://localhost:8080/app/v4.html`, demo at `http://localhost:8080/site/demo.html` and privacy policy at `http://localhost:8080/site/privacy.html`. Real Guardian links require a signed token. The native video section is marked pending.
 
@@ -81,6 +81,7 @@ Run locally at `http://localhost:8080/site/`; open the companion at `http://loca
 - [Deployment, providers, secrets and storage](docs/DEPLOYMENT.md)
 - [RevenueCat configuration and device test matrix](docs/REVENUECAT.md)
 - [Shipaton requirements, demo script and award assessment](docs/SHIPATON.md)
+- [Screen implementation audit](docs/SCREEN_AUDIT.md)
 - [Remaining external prerequisites](docs/EXTERNAL_REQUIREMENTS.md)
 - [iOS setup](ios/README.md)
 
@@ -131,7 +132,7 @@ Check-ins ensure at least five minutes until the deadline. ETA extension creates
 
 ## iOS and submission
 
-See [iOS setup](ios/README.md). CI generates the Xcode project and builds the simulator. Apple public SDK key, store products, signing and device purchase testing remain required if iOS is submitted. The iOS client does not yet provide full Android feature parity.
+See [iOS setup](ios/README.md). CI generates the Xcode project and builds the simulator. Apple public SDK key, store products, signing and device purchase testing remain required if iOS is submitted. The iOS client now has server-confirmed basic sessions/history, role links/contacts and privacy/capsule controls, plus labeled local reminders. Full Android parity and physical/store verification remain incomplete.
 
 No downloads, revenue, customer feedback, store listing or successful live delivery/purchase is claimed. Shipaton 2026 standard entries require a qualifying store release; eligible students have the Next Gen exception. The website and debug APK are testing aids.
 

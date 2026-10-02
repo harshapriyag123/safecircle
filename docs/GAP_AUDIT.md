@@ -31,5 +31,12 @@ Backend regression tests use mocks and send no real notifications or purchases. 
 - One-minute Cloudflare Cron adapter and three regression tests implemented;
   **not deployed**, pending authorized Cloudflare account. No daily Vercel cron
   or request background loop is claimed as monitoring.
-- Local SQLite backend suite: 51 passed, one PostgreSQL-only test skipped. Latest
+- Local SQLite backend suite: 51 passed, two PostgreSQL-only tests skipped. Latest
   PostgreSQL/native/browser CI must be inspected before claiming new checks passed.
+
+Controlled production API checks now passed on Vercel with dedicated Neon:
+registration/login/invalid password, manual tick authorization, signed roles and
+Guardian actions, check-in/ETA, escalation redaction, terminal resolution, server
+history and logout revocation. No contacts/purchases were used. A manual tick is
+not a live scheduler. The latest iOS basic lifecycle/Vault/Circle/Automate controls
+compile in simulator CI; native parity and device/store verification still remain.

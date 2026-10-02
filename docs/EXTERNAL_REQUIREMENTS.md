@@ -1,23 +1,41 @@
-# Inputs and live checks still needed
+# Remaining external requirements — 2026-10-02 UTC
 
-These are external prerequisites, not completed implementation claims. Do not paste secrets into public issues, PRs, screenshots or client code.
+The existing Vercel Hobby domain hosts the full website/backend. A dedicated
+Neon Free database and private secrets are configured after the owner's explicit
+terms approval. Controlled production API tests passed; this is not evidence of
+continuous monitoring or delivery. No Railway setup is required.
 
-1. **Free backend hosting:** provide an always-running host with persistent storage (a computer you already own can use `compose.selfhost.yml`) or authorized account access to a compatible host. No paid resources may be created. The public static preview is deployed; it is not an API/backend. Cloudflare Quick Tunnel was network-blocked here. Render connection was not confirmed, and its free sleeping/ephemeral service cannot run the current durable safety backend unchanged. See `FREE_HOSTING.md`; verify HTTPS routes, account/Guardian workflows and restart persistence before rebuilding Android with its origin.
-2. **RevenueCat and stores:** Android public SDK key (and Apple public key if iOS is submitted), connected store credentials and actual product IDs mapped to `safecircle_pro`, a current offering/published paywall and configured Customer Center. A server-only key authorized for v1 subscriber reads and independent webhook authorization are needed for reconciliation. Project ID `proj5f7132ef` supplies none of these credentials. Verify the device purchase/restore/account-change/refund matrix in `REVENUECAT.md` using store test accounts; code tests do not establish purchases.
-3. **Delivery providers:** Twilio SID/auth token/sender, permitted consenting test destinations and signed receipt callback configuration. If push is enabled, provide an HTTPS adapter with opted-in Guardian device registration/routing, idempotent delivery and authenticated receipts, plus separate adapter/receipt credentials. Verify accepted vs delivered, failures, ETA cancellation and resolution on the deployed service. This repository currently supplies an adapter contract rather than its own push registration service.
-4. **Submission eligibility and assets:** qualifying public store listing/release-date/US availability evidence, or confirmed eligible Next Gen student status with academic verification and parental consent if required. Provide Play signing/test-track access; Apple signing/TestFlight access only if iOS is submitted. Record/upload a public native demo using actual configured premium flows (script in `SHIPATON.md`); native emulator screenshots and the 1024px icon can support assets but do not prove store publication. Supply real growth/build-in-public evidence only for awards requiring it.
+1. **Continuous scheduler account/access:** authorize an existing Cloudflare
+   Workers Free account to provision `scheduler/cloudflare`, or supply another
+   reviewed free platform capable of minute-level execution. The adapter and
+   tests are complete; deployment and at least two platform-scheduled ticks are
+   not verified. Manual diagnostic ticks are not a scheduler. Track Vercel/Neon/
+   Cloudflare free quotas; exhausted quotas can pause service. No paid overage,
+   payment method or automatic upgrade is authorized. Continuous database traffic
+   consumes Neon compute allowance and cannot be promised indefinitely for $0.
+2. **Notification provider and consenting contacts:** configure Twilio account,
+   sender and signed callbacks privately for SMS testing. Push requires an
+   authenticated HTTPS adapter with opted-in Guardian registration/routing,
+   idempotency and delivery receipts; the repo supplies the adapter contract,
+   not a production push registration service. Obtain explicit test-contact
+   consent before live delivery. Verify queued, accepted, delivered, uncertain
+   outcomes and cancellation using actual receipts. No real messages were sent.
+3. **RevenueCat/store access:** Android public SDK key and Apple key if iOS is
+   submitted; connected store credentials/product IDs mapped to `safecircle_pro`,
+   current offering/published paywall and Customer Center. Supply a server-only
+   credential for subscriber reads and configure the generated webhook auth
+   privately in RevenueCat. `proj5f7132ef` is metadata only. Store test accounts,
+   Play signing/test-track access and Apple signing/TestFlight if applicable are
+   needed for actual purchase/restore/refund/account-transfer tests. No purchase
+   is claimed from SDK compilation or webhook unit tests.
+4. **Device and submission evidence:** physical-device background/reconnect and
+   permission testing; qualifying store publication/US availability/release-date
+   evidence, or confirmed eligible Next Gen student status/academic verification
+   and guardian consent if a minor. Record/upload the actual native premium
+   demo video. The 2026 deadline has passed; organizer acceptance/eligibility
+   cannot be inferred from this implementation. Supply actual launch/growth and
+   dated public-feedback evidence only for categories requiring it.
 
-No downloads, revenue, customer feedback, production deliveries or store publication have been established. Peace Prize is an intended-purpose fit; Design needs polished native evidence; Next Gen is conditional. Optional unrelated sponsor categories should remain blank.
-
-## Current Vercel continuation
-
-1. Approve Vercel Marketplace/Neon terms before creating a dedicated free database
-   and confirm that the available plan remains $0 without paid overages.
-2. Configure its private TLS PostgreSQL URL and independent production secrets
-   listed in VERCEL_DEPLOYMENT.md. Server secrets can be generated securely; they
-   must not be posted in chat or committed.
-3. Provide an always-on worker host for the 15-second tick runner (or complete a
-   tested durable scheduler integration). Daily free cron cannot meet alert timing.
-4. Authorized notification provider configuration and consenting test contacts.
-5. RevenueCat SDK/store credentials, offerings/products, webhook/reconciliation
-   credentials and device/store test access for purchase/restore/Customer Center.
+Secrets must stay out of chat, git, screenshots and native client bundles except
+public SDK keys. No downloads, revenue, customer feedback, store publication,
+continuous alert delivery or successful purchase has been established.

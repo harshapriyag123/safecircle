@@ -14,11 +14,12 @@ are separate evidence. No claim that every platform has feature parity is made.
 | Android Profile | Register/login/logout/delete, RevenueCat paywall/restore/Customer Center | Actual store products and purchases pending |
 | Web Home/session | Authenticated start; canonical server check-in/ETA/resolve; failed requests preserve state; monitoring readiness remains visible on mobile | No monitoring claimed without a current external tick |
 | Web Account | Registration/login validation, busy states, token revocation, private local state cleared between accounts | No third-party OAuth or password recovery claimed |
-| Web Circle | Distinct signed Primary/Backup links, copy/share/open | Link issuance is separate from consented phone delivery |
+| Web Circle | Distinct signed Primary/Backup links, copy/share/open, consented E.164 contacts, recorded delivery states | Link issuance is separate from consented phone delivery |
 | Web Shield/exit aid | Phrase test and server concern, explainable scanner, labeled simulated call | Concern recording does not mean immediate delivered alert; browser timers may suspend |
+| Web Vault | Apply session privacy; encrypted one-hour instruction capsule/clear | Browser does not fabricate precise location |
 | Web History/Sync | Owner-only server history (latest 100), native state and actual available battery | Browser cannot fabricate phone location/battery |
 | Guardian | Signed expiring view, acknowledged/request-check-in actions, privacy allowlist, terminal read-only state | Real delivery pending provider configuration |
-| iOS Today/setup | Requires authentication; active session only after server accepts; refresh, canonical check-in/ETA/resolve, visible errors/busy states | Simulator compilation pending latest CI; physical devices/store pending |
+| iOS Today/setup | Requires authentication; active session only after server accepts; refresh, canonical check-in/ETA/resolve, visible errors/busy states | Simulator compilation passed; physical devices/store pending |
 | iOS Circle | Distinct role invites, share links, consented E.164 Primary/Backup session contacts, error feedback | Real delivery and contact refresh across app relaunch pending |
 | iOS Vault | Apply privacy, encrypted one-hour instruction capsule/clear, owner-only history | Client does not collect precise location; Android parity incomplete |
 | iOS Automate | Device-private phrase test/server concern; actual permission-based local reminder and cancellation | Custom background rules/recurring detection unavailable; local reminder is not server monitoring |

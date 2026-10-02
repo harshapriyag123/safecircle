@@ -89,7 +89,10 @@ A dedicated Neon database `safecircle-production` was created on the Free plan
 and attached only to this project's production environment after explicit owner
 approval of the displayed Marketplace/Neon agreement. No paid plan or payment
 method was selected. Database URLs and independent application secrets were saved
-as private Vercel variables. A new deployment is required to activate them.
+as private Vercel variables. Production deployment from `24a5a2877c8d0924e4e9f503e9a9bd3f86c51ee1`
+activated them. Backend readiness and controlled production API flows passed.
+PostgreSQL timeouts now use transaction-local SET statements compatible with
+Neon pooled connections; unsupported startup options were removed.
 
 Companion actions now change local session state only after successful server
 responses. The history API returns owner-scoped summaries; logout clears local
@@ -97,3 +100,13 @@ session, history and Guardian data. Old companion entrypoints redirect to v4.
 Android Nearby Support opens actual map searches and no longer displays fictional
 nearby providers or availability. The next CI/deployment records will establish
 which new code and live checks passed.
+
+## Controlled production checks
+
+API tests used fictional accounts, synthetic coordinates and no notification
+contacts. Worker authorization, one manual tick, registration/login and invalid
+password rejection, signed Primary/Backup actions, canonical check-in/ETA,
+escalation privacy, resolution/read-only behavior, history and logout revocation
+passed on the requested Vercel origin. The test account is retained temporarily
+for a redeployment-persistence check. This does not establish an active scheduler,
+provider delivery, store billing, physical-device behavior or unrestricted quotas.
