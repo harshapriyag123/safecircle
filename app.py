@@ -9,7 +9,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from backend.app.config import validate_production_config
 from backend.app import db
@@ -72,6 +72,14 @@ async def external_tick(request: Request):
     from backend.app.main import worker_tick
     await worker_tick()
     return {'status': 'ok'}
+
+
+@app.get('/app/')
+@app.get('/app/index.html')
+@app.get('/app/v2.html')
+@app.get('/app/v3.html')
+def canonical_companion():
+    return RedirectResponse('/app/v4.html', status_code=307)
 
 
 app.mount('/', backend)

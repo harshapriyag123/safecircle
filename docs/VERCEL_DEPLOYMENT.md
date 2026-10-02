@@ -55,9 +55,10 @@ python backend/run_external_worker.py
 Set `SAFECIRCLE_PUBLIC_BASE_URL` and `SAFECIRCLE_WORKER_SECRET` in its private
 process environment. Run under a process supervisor. The runner calls the server
 every 15 seconds, retries with bounded backoff, and omits credentials from logs.
-No always-on worker has yet been provisioned. Free Vercel daily cron is insufficient
-for 5/10/15-minute alerts. A native durable workflow alternative requires a tested
-scheduler integration; it is not claimed as implemented here.
+No continuous scheduler has yet been provisioned. A tested one-minute Cloudflare
+Cron adapter is provided in [scheduler/cloudflare](../scheduler/cloudflare/README.md);
+it still requires an authorized account and live scheduling verification. Free Vercel daily cron is insufficient
+for 5/10/15-minute alerts. The prepared Cron adapter is not claimed as deployed or verified here.
 
 If the worker stops, existing jobs remain stored but execution is delayed. Readiness
 and session creation safeguards do not themselves deliver an alert. Providers,
@@ -84,6 +85,15 @@ alerts are claimed. Backend CI run 36943959478 passed both SQLite and PostgreSQL
 and Website CI run 36943959410 passed. External ticks use smaller delivery and
 reconciliation batches to bound provider waits; load testing is still required.
 
-Neon setup is paused before accepting Vercel Marketplace and Neon terms; no
-database was created and no paid plan selected. Production environment currently
-has no application secrets or database URL.
+A dedicated Neon database `safecircle-production` was created on the Free plan
+and attached only to this project's production environment after explicit owner
+approval of the displayed Marketplace/Neon agreement. No paid plan or payment
+method was selected. Database URLs and independent application secrets were saved
+as private Vercel variables. A new deployment is required to activate them.
+
+Companion actions now change local session state only after successful server
+responses. The history API returns owner-scoped summaries; logout clears local
+session, history and Guardian data. Old companion entrypoints redirect to v4.
+Android Nearby Support opens actual map searches and no longer displays fictional
+nearby providers or availability. The next CI/deployment records will establish
+which new code and live checks passed.

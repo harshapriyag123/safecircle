@@ -71,7 +71,7 @@ The public product site is implemented under `web/site/`, with a landing page, s
 
 **Vercel website and backend code are deployed:** https://safecircle-site.vercel.app/site
 
-The repository branch `shipaton/completion` deploys automatically to the existing free Hobby project. Landing page, companion and signed Guardian client code are hosted together. Backend routes refuse requests until dedicated PostgreSQL and production secrets are configured; new monitored sessions additionally require a current alert-worker heartbeat. Native defaults now use this origin, but live account, alert and purchase flows remain unverified. See [Vercel setup](docs/VERCEL_DEPLOYMENT.md).
+The repository branch `shipaton/completion` deploys automatically to the existing free Hobby project. Landing page, companion and signed Guardian client code are hosted together. A dedicated free Neon database and private production secrets are configured; new monitored sessions additionally require a current alert-worker heartbeat. Native defaults now use this origin, but live account, alert and purchase flows remain unverified. See [Vercel setup](docs/VERCEL_DEPLOYMENT.md).
 
 Run locally at `http://localhost:8080/site/`; open the companion at `http://localhost:8080/app/v4.html`, demo at `http://localhost:8080/site/demo.html` and privacy policy at `http://localhost:8080/site/privacy.html`. Real Guardian links require a signed token. The native video section is marked pending.
 
@@ -121,7 +121,7 @@ PYTHONPATH=backend python -m uvicorn app.entrypoint:app --port 8080
 
 Configure variables from `backend/.env.example` in the process environment (the file is a template, not automatically loaded). `/` redirects to `/site/`; `/app/v4.html` is the companion; `/guardian/?token=...` is a real Guardian view requiring a signed link. `/site/demo.html` is explicitly simulated and sends no notifications. `/site/privacy.html` describes current data handling. The video section truthfully marks the native recording as pending.
 
-The root Dockerfile serves the API and website in one deployment. The existing Railway domain is known, but deployment of this branch and persistent volume configuration must be verified. Do not assume main or a PR is automatically deployed.
+The root Dockerfile supports self-hosting. Production uses the existing Vercel Hobby project with dedicated Neon PostgreSQL. The tested one-minute scheduler adapter is in [scheduler/cloudflare](scheduler/cloudflare/README.md); it requires account access and live verification before monitoring is available.
 
 ## Safety behavior
 
