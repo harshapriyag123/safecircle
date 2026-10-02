@@ -97,7 +97,7 @@ REVENUECAT_API_KEY=
 SAFECIRCLE_API_BASE_URL=https://your-verified-host.example
 ```
 
-Replace the example API origin with your verified HTTPS backend; the previous Railway domain is currently unavailable.
+The API default is the verified HTTPS Vercel origin. Preserve it unless deliberately testing another backend.
 
 Set `REVENUECAT_API_KEY` only to your Android public SDK key (`goog_...`; a test-store key is for development only). An empty key disables billing while safety scheduling remains active. Never embed secret API keys or use `proj5f7132ef` as a credential. Do not set a shared demo access token in a distributed build.
 
@@ -116,7 +116,8 @@ Sign in, create a session and configure distinct E.164 Primary/Backup phone cont
 python -m venv .venv
 . .venv/bin/activate
 pip install -r backend/requirements.txt
-PYTHONPATH=backend python -m pytest backend/tests -q
+cd backend
+PYTHONPATH=. python -m pytest tests -q
 PYTHONPATH=backend python -m uvicorn app.entrypoint:app --port 8080
 ```
 

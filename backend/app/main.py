@@ -20,7 +20,6 @@ from .models import (
     RegisterRequest,
     LoginRequest,
 )
-from .providers import deliver_escalation
 from .security import (
     require_bearer,
     sign_guardian_token,
@@ -656,8 +655,11 @@ async def push_delivery_receipt(job_id: str, request: Request,
     secret = os.getenv('SAFECIRCLE_DELIVERY_RECEIPT_SECRET', '')
     if not secret or not hmac.compare_digest(authorization or '', 'Bearer ' + secret):
         raise HTTPException(status_code=401, detail='Invalid delivery receipt authentication')
-    body = await request.json()
-    if body.get('status') not in {'delivered', 'failed'}:
+    try:
+        body = await request.json()
+    except ValueError:
+        raise HTTPException(status_code=422, detail='Expected a JSON receipt object')
+    if not isinstance(body, dict) or body.get('status') not in {'delivered', 'failed'}:
         raise HTTPException(status_code=422, detail='Expected delivered or failed status')
     job = db.get_delivery(job_id)
     if job is None or job['channel'] != 'push_webhook':

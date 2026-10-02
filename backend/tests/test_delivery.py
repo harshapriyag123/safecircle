@@ -62,6 +62,7 @@ def test_retry_then_acceptance_is_not_delivery(isolated_db, monkeypatch):
     # Isolate one webhook job so scheduling order is deterministic.
     db.enqueue_delivery(s, 5, 'primary', 'push_webhook', {}, now)
     monkeypatch.setenv('SAFECIRCLE_PUSH_WEBHOOK_URL', 'https://example.com/push')
+    monkeypatch.setenv('SAFECIRCLE_PUSH_WEBHOOK_SECRET', 'x' * 32)
     responses = iter([DeliveryResult('push_webhook', False), DeliveryResult('push_webhook', True, 'provider-1')])
     seen = []
     def send(self, payload):

@@ -10,7 +10,7 @@ os.environ.setdefault("REVENUECAT_WEBHOOK_SECRET", "test-revenuecat-secret")
 from app import db
 from app.entrypoint import app
 from app.main import public_snapshot
-from app.providers import DeliveryResult, deliver_escalation
+from app.providers import DeliveryResult
 from app.security import sign_access_token
 
 
@@ -78,26 +78,6 @@ def test_patch_can_clear_sensitive_data_but_not_required_fields():
         assert "capsule_json" not in current
         assert client.patch("/v1/sessions/" + s["id"], json={"state": None},
                             headers=headers(s["owner_id"])).status_code == 422
-
-
-def test_escalation_sessions_decrypt_contact_for_sms(monkeypatch):
-    s = session()
-    sent = []
-    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "test-sid")
-    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-token")
-    monkeypatch.setenv("TWILIO_FROM_NUMBER", "+15555550000")
-    monkeypatch.delenv("SAFECIRCLE_PUSH_WEBHOOK_URL", raising=False)
-    def send(self, number, message):
-        sent.append(number)
-        return DeliveryResult("twilio_sms", True, "test-message")
-    monkeypatch.setattr("app.providers.TwilioSmsProvider.send", send)
-    with TestClient(app) as client:
-        client.post("/v1/sessions", json=s, headers=headers(s["owner_id"]))
-        active = next(item for item in db.active_sessions() if item["id"] == s["id"])
-        assert "capsule_json" not in active
-        results = deliver_escalation(active, 5)
-        assert sent == ["+15555550123"]
-        assert results[0].accepted
 
 
 def test_concern_does_not_release_precise_location_and_expired_capsule_is_withheld():

@@ -17,6 +17,22 @@ class DeliveryResult:
     ambiguous: bool = False
 
 
+def valid_push_url(url: str) -> bool:
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        return bool(parsed.scheme == 'https' and parsed.hostname and
+                    not parsed.username and not parsed.password and
+                    not parsed.query and not parsed.fragment)
+    except ValueError:
+        return False
+
+
+class NoProviderRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward authorization or Guardian routing data to another URL.
+        return None
+
+
 class PushWebhookProvider:
     def __init__(self) -> None:
         self.url = os.getenv("SAFECIRCLE_PUSH_WEBHOOK_URL", "").strip()
@@ -24,7 +40,7 @@ class PushWebhookProvider:
 
     @property
     def configured(self) -> bool:
-        return bool(self.url)
+        return valid_push_url(self.url) and len(self.secret) >= 32
 
     def send(self, payload: dict[str, Any]) -> DeliveryResult:
         if not self.configured:
@@ -34,18 +50,31 @@ class PushWebhookProvider:
         request.add_header("Content-Type", "application/json")
         if payload.get("delivery_id"):
             request.add_header("Idempotency-Key", str(payload["delivery_id"]))
-        if self.secret:
-            request.add_header("Authorization", "Bearer " + self.secret)
+        request.add_header("Authorization", "Bearer " + self.secret)
         try:
-            with urllib.request.urlopen(request, timeout=8) as response:
-                raw = response.read().decode(errors="ignore")
+            with urllib.request.build_opener(NoProviderRedirect()).open(request, timeout=8) as response:
+                raw = response.read(4097)
+                message_id = None
+                # Persist only the adapter's explicitly named identifier, never
+                # arbitrary response bodies that may contain private diagnostics.
+                if len(raw) <= 4096:
+                    try:
+                        result = json.loads(raw)
+                        candidate = result.get('message_id') if isinstance(result, dict) else None
+                        if isinstance(candidate, str) and 0 < len(candidate) <= 120 and all(
+                                ch.isascii() and (ch.isalnum() or ch in '._:-') for ch in candidate):
+                            message_id = candidate
+                    except (ValueError, UnicodeDecodeError):
+                        pass
                 return DeliveryResult(
                     "push_webhook",
                     200 <= response.status < 300,
-                    provider_message_id=raw[:120] or None,
+                    provider_message_id=message_id,
                 )
-        except Exception as exc:
-            return DeliveryResult("push_webhook", False, error=str(exc))
+        except urllib.error.HTTPError as exc:
+            return DeliveryResult("push_webhook", False, error="http_" + str(exc.code))
+        except Exception:
+            return DeliveryResult("push_webhook", False, error="adapter_unavailable")
 
 
 class TwilioSmsProvider:
@@ -84,31 +113,3 @@ class TwilioSmsProvider:
             return DeliveryResult("twilio_sms", False, error="http_" + str(exc.code))
         except Exception:
             return DeliveryResult("twilio_sms", False, error="outcome_unknown", ambiguous=True)
-
-
-def deliver_escalation(session: dict[str, Any], stage: int) -> list[DeliveryResult]:
-    message = (
-        f"SafeCircle: {session.get('mode','Safety Session')} is unresolved "
-        f"{stage} minutes after the expected-safe time."
-    )
-    payload = {
-        "event": "safecircle_escalation",
-        "session_id": session["id"],
-        "owner_id": session["owner_id"],
-        "stage_minutes": stage,
-        "state": session.get("state", "CONCERN"),
-        "message": message,
-    }
-
-    results: list[DeliveryResult] = []
-    push = PushWebhookProvider()
-    if push.configured:
-        results.append(push.send(payload))
-
-    capsule = session.get("capsule") or {}
-    phone = capsule.get("primaryContact") if isinstance(capsule, dict) else None
-    sms = TwilioSmsProvider()
-    if phone and sms.configured:
-        results.append(sms.send(str(phone), message))
-
-    return results
