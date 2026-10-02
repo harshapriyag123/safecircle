@@ -5,6 +5,7 @@ but refuse every backend request. Never create an ephemeral safety database.
 """
 import asyncio
 import os
+import logging
 import time
 from contextlib import asynccontextmanager
 
@@ -22,13 +23,16 @@ os.environ.setdefault('SAFECIRCLE_WORKER_MODE', 'external')
 @asynccontextmanager
 async def lifespan(application):
     application.state.backend_ready = False
+    phase = 'configuration'
     try:
         if not os.getenv('DATABASE_URL'):
             raise RuntimeError('Persistent database not configured')
         validate_production_config()
+        phase = 'database'
         db.init_db()
         application.state.backend_ready = True
-    except Exception:
+    except Exception as exc:
+        logging.getLogger('safecircle').error('Backend initialization failed at %s (%s)', phase, type(exc).__name__)
         # Don't disclose connection strings, credentials, or database errors.
         application.state.backend_ready = False
     yield
