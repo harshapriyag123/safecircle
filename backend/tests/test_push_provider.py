@@ -62,7 +62,8 @@ def test_redirect_and_exception_diagnostics_are_not_disclosed(provider, monkeypa
     assert provider.send({}).error == 'adapter_unavailable'
 
 
-@pytest.mark.parametrize('body', ['not-json', '[]', 'null', '"delivered"', '{"status":"accepted"}'])
+@pytest.mark.parametrize('body', ['not-json', '[]', 'null', '"delivered"', '{"status":"accepted"}',
+                                '{"status":[]}', '{"status":{}}'])
 def test_authenticated_malformed_receipt_is_validation_error(monkeypatch, body):
     monkeypatch.setenv('SAFECIRCLE_DELIVERY_RECEIPT_SECRET', 'test-receipt')
     with TestClient(app) as client:

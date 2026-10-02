@@ -659,7 +659,7 @@ async def push_delivery_receipt(job_id: str, request: Request,
         body = await request.json()
     except ValueError:
         raise HTTPException(status_code=422, detail='Expected a JSON receipt object')
-    if not isinstance(body, dict) or body.get('status') not in {'delivered', 'failed'}:
+    if not isinstance(body, dict) or body.get('status') not in ('delivered', 'failed'):
         raise HTTPException(status_code=422, detail='Expected delivered or failed status')
     job = db.get_delivery(job_id)
     if job is None or job['channel'] != 'push_webhook':
