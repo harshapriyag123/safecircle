@@ -1,0 +1,11 @@
+.git
+.env*
+.gradle
+**/build/**
+**/__pycache__/**
+**/node_modules/**
+**/*.db
+**/*.db-*
+app/src
+ios
+docs/screenshots

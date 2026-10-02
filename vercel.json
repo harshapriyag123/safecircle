@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "fastapi",
+  "headers": [
+    {"source": "/v1/:path*", "headers": [{"key": "Cache-Control", "value": "no-store"}]},
+    {"source": "/guardian/:path*", "headers": [{"key": "Cache-Control", "value": "no-store"}, {"key": "Referrer-Policy", "value": "no-referrer"}]}
+  ]
+}

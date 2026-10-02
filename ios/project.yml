@@ -4,6 +4,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: 5.9
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios.git
+    exactVersion: 5.92.0
 targets:
   SafeCircleIOS:
     type: application
@@ -11,8 +15,15 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - SafeCircleIOS
+    dependencies:
+      - package: RevenueCat
+        product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
     settings:
       base:
+        REVENUECAT_PUBLIC_SDK_KEY: ""
+        INFOPLIST_KEY_RevenueCatPublicSDKKey: $(REVENUECAT_PUBLIC_SDK_KEY)
         PRODUCT_BUNDLE_IDENTIFIER: com.harshapriya.safecircle.ios
         INFOPLIST_KEY_CFBundleDisplayName: SafeCircle
         GENERATE_INFOPLIST_FILE: YES

@@ -1,0 +1,8 @@
+{
+  "name": "safecircle-alert-scheduler",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "triggers": {"crons": ["* * * * *"]},
+  "vars": {"SAFECIRCLE_PUBLIC_BASE_URL": "https://safecircle-site.vercel.app"}
+}

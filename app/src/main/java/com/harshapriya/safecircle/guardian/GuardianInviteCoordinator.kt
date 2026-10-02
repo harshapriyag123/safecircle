@@ -1,6 +1,7 @@
 package com.harshapriya.safecircle.guardian
 
 import android.content.Context
+import com.harshapriya.safecircle.profile.EmergencyProfileRepository
 import com.harshapriya.safecircle.auth.AuthRepository
 import com.harshapriya.safecircle.data.SafetyRepository
 import com.harshapriya.safecircle.domain.SafetyEngine
@@ -51,8 +52,11 @@ class GuardianInviteCoordinator(private val context: Context) {
                 longitude = location?.longitude,
                 locationAccuracy = location?.accuracyMeters,
                 privacyMode = privacy.locationMode.name,
+                        shareBatteryOnEscalation = privacy.shareBatteryOnEscalation,
+                        shareDestinationOnEscalation = privacy.shareDestinationOnEscalation,
                 resolved = session.resolved,
-                capsuleJson = SafetyCapsuleStore(context).get(session.id)
+                guardianContactsJson = EmergencyProfileRepository(context).deliveryContactsJson(),
+                        capsuleJson = SafetyCapsuleStore(context).get(session.id)
             )
         )
 

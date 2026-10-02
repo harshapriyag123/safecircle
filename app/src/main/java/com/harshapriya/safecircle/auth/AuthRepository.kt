@@ -25,8 +25,36 @@ class AuthRepository(private val context: Context) {
         return AuthState(userId, token, email, displayName)
     }
 
+    fun deleteAccount(password: String) {
+        val auth = state() ?: error("Sign in first")
+        accountRequest("DELETE", "/v1/account", auth, JSONObject().put("email", auth.email).put("password", password))
+        androidx.work.WorkManager.getInstance(context).cancelAllWork()
+        val directory = java.io.File(context.applicationInfo.dataDir, "shared_prefs")
+        directory.listFiles()?.filter { it.extension == "xml" }?.forEach {
+            context.getSharedPreferences(it.nameWithoutExtension, Context.MODE_PRIVATE).edit().clear().commit()
+        }
+        context.filesDir.listFiles()?.forEach { it.deleteRecursively() }
+        com.harshapriya.safecircle.billing.SubscriptionManager.identify(null)
+    }
+
+    private fun accountRequest(method: String, path: String, auth: AuthState, body: JSONObject = JSONObject()) {
+        val connection = URL(NetworkConfig.baseUrl + path).openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = method
+            connection.connectTimeout = 8_000; connection.readTimeout = 8_000
+            connection.doOutput = true
+            connection.setRequestProperty("Authorization", "Bearer " + auth.accessToken)
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+            if (connection.responseCode !in 200..299) error("Account operation failed; check password and connection")
+        } finally { connection.disconnect() }
+    }
+
     fun signOut() {
+        state()?.let { auth -> Thread { runCatching { accountRequest("POST", "/v1/auth/logout", auth) } }.start() }
+
         prefs.edit().clear().apply()
+        com.harshapriya.safecircle.billing.SubscriptionManager.identify(null)
     }
 
     fun register(
@@ -96,6 +124,7 @@ class AuthRepository(private val context: Context) {
                 .putString("email", auth.email)
                 .putString("display_name", auth.displayName)
                 .apply()
+            com.harshapriya.safecircle.billing.SubscriptionManager.identify(auth.userId)
             auth
         } finally {
             connection.disconnect()

@@ -41,14 +41,18 @@ class SessionSetupFragment : Fragment() {
         modeSpinner.setSelection(0)
 
         root.findViewById<TextView>(R.id.setupPrivacySummary).text =
-            "Location privacy: " + privacy.locationMode.name.replace('_', ' ') +
+            "Local session only: shared Guardian monitoring is unverified. Server sessions require a current alert worker and account sync.\n\nLocation privacy: " + privacy.locationMode.name.replace('_', ' ') +
                 "\nCapsule retention: " + privacy.capsuleRetentionHours + "h"
 
         root.findViewById<MaterialButton>(R.id.startConfiguredSessionButton).setOnClickListener {
+            if (vm.session.value?.resolved == false) {
+                Toast.makeText(requireContext(), "Resolve the active session before starting another.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
             val mode = modes[modeSpinner.selectedItemPosition]
             val minutes = duration.text.toString().toIntOrNull()
-            if (minutes == null || minutes < 5) {
-                Toast.makeText(requireContext(), "Choose at least 5 minutes.", Toast.LENGTH_SHORT).show()
+            if (minutes == null || minutes !in 5..1440) {
+                duration.error = "Choose between 5 and 1440 minutes."
                 return@setOnClickListener
             }
 
@@ -57,7 +61,7 @@ class SessionSetupFragment : Fragment() {
                 durationMinutes = minutes,
                 destinationLabel = destination.text.toString().trim().ifBlank { null }
             )
-            Toast.makeText(requireContext(), "Safety Session started", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Local session started. Shared monitoring is unverified.", Toast.LENGTH_LONG).show()
             findNavController().popBackStack()
         }
 

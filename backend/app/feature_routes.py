@@ -138,3 +138,11 @@ def guardian_request_check_in(token: str) -> dict[str, Any]:
         {"role": payload.get("role", "guardian")},
     )
     return {"ok": True, "session": public_snapshot(session, payload.get("role", "guardian"))}
+
+
+@router.get("/v1/me/history")
+def my_history(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    user_id = auth_or_401(authorization)
+    with db.connect() as conn:
+        rows = conn.execute("SELECT id, owner_id, mode, destination, started_at, expected_end_at, last_check_in_at, privacy_mode, resolved_at FROM sessions WHERE owner_id=? AND resolved=1 ORDER BY resolved_at DESC LIMIT 100", (user_id,)).fetchall()
+    return {"sessions": [dict(row) for row in rows]}

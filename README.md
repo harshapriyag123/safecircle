@@ -1,1002 +1,142 @@
-# 🛡️ SafeCircle
-
-<div align="center">
-
-### **Someone should notice.**
-
-**A programmable personal-safety network that turns everyday journeys into protected Safety Sessions.**
-
-Walk home. Take a rideshare. Meet someone new. Travel alone.  
-SafeCircle helps you decide **who should notice, what they should know, and what should happen if you don't check in.**
-
-![Android](https://img.shields.io/badge/Android-Native-3DDC84?logo=android&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?logo=kotlin&logoColor=white)
-![RevenueCat](https://img.shields.io/badge/RevenueCat-Integrated-F25A5A)
-![Status](https://img.shields.io/badge/Status-Hackathon%20Prototype-315E58)
-![License](https://img.shields.io/badge/License-MIT-blue)
-
-</div>
-
----
-
-## 🌎 The Problem
-
-Personal safety tools often begin **after something has already gone wrong**.
-
-A panic button is valuable, but many real-life situations develop gradually:
-
-- a walk home takes longer than expected;
-- a rideshare goes off schedule;
-- someone misses a promised check-in;
-- a phone battery becomes critically low;
-- a person meeting someone new wants a discreet way to ask for help;
-- a family member wants reassurance without demanding permanent location access.
-
-Today, users often solve this manually by sending messages like:
-
-> “I'm leaving now.”  
-> “I'll text you when I get home.”  
-> “If I don't message by 10:30, call me.”
-
-That informal safety protocol is easy to forget, difficult to coordinate, and usually has no structured escalation.
-
-**SafeCircle turns that social promise into a programmable safety workflow.**
-
----
-
-# 💡 The Idea
-
-SafeCircle is not designed as another panic-button app.
-
-It introduces a new primitive:
-
-## **The Safety Session**
-
-Before entering a situation where they want someone to notice, the user starts a temporary Safety Session.
-
-```text
-START SESSION
-      │
-      ▼
-Expected-safe time
-      │
-      ▼
-Check-ins + session signals
-      │
-      ▼
-Explainable Safety State
-      │
-      ├── Everything normal ────────────────┐
-      │                                     │
-      └── Condition changes                 │
-             │                              │
-             ▼                              │
-       Request check-in                     │
-             │                              │
-       no response                          │
-             ▼                              │
-       Guardian escalation                  │
-             │                              │
-             ▼                              │
-       Safety Capsule                       │
-                                            │
-User confirms safe ─────────────────────────┘
-                    │
-                    ▼
-                 RESOLVED
-```
-
-The goal is simple:
-
-> **Make safety decisions while you're safe — not while you're scared.**
-
----
-
-# ✨ Core Experiences
-
-## 🚶 Walk Home
-
-Create a short Safety Session before walking alone.
-
-SafeCircle records the expected-safe time and keeps the session visible until the user checks in or resolves it.
-
-## 🚕 Rideshare
-
-Create a temporary session around a taxi or rideshare journey.
-
-The architecture is designed to support trip metadata, vehicle information, expected arrival, route signals, and Guardian escalation without depending on a specific rideshare provider.
-
-## 🤝 Meet Someone
-
-Useful when meeting someone unfamiliar.
-
-A user can establish an expected end time and configure a discreet check-in/escalation plan before the meeting begins.
-
-## 🫶 Stay With Me
-
-Safety does not always involve travel.
-
-Someone waiting alone in a parking lot, transit station, campus, or unfamiliar location can create a short temporary Guardian session and end it when they feel safe.
-
----
-
-# 🧠 Explainable Safety Engine
-
-SafeCircle deliberately avoids claiming that an algorithm can determine whether someone is “in danger.”
-
-Instead, it evaluates **observable Safety Session conditions**.
-
-### State machine
-
-```text
- NORMAL
-   │
-   ▼
-ATTENTION
-   │
-   ▼
-CHECK_IN
-   │
-   ▼
- CONCERN
-   │
-   ▼
-ESCALATED
-   │
-   ▼
-RESOLVED
-```
-
-The prototype evaluates signals such as:
-
-| Signal | Example interpretation |
-|---|---|
-| Expected-safe time | Is the session overdue? |
-| Check-in status | Has a scheduled confirmation been missed? |
-| Battery | Is the device approaching a low-battery condition? |
-| Route signal | Has an optional route-deviation signal changed? |
-| Session state | Has the user already resolved the session? |
-
-The engine returns both a state and the reasons behind it.
-
-Example:
-
-```text
-Safety Readiness
-62 / 100
-
-CONCERN
-
-• 1 check-in missed
-• Route deviation signal detected
-• Battery below 20%
-• ETA still within current window
-```
-
-That makes the experience **explainable rather than mysterious**.
-
----
-
-# ⚡ Safety Readiness
-
-SafeCircle surfaces a simple readiness score to help the user understand whether their Safety Session is well prepared.
-
-A strong session might show:
-
-```text
-92 / 100
-
-✓ Expected-safe time configured
-✓ Check-ins current
-✓ Battery sufficient
-✓ Route signal normal
-```
-
-The score is not a prediction of crime or danger.
-
-It is an interface for explaining the completeness and current conditions of the user's Safety Session.
-
----
-
-# 👥 Guardian Circle
-
-A Safety Session becomes useful when another trusted person can participate.
-
-SafeCircle models three Guardian roles:
-
-```text
-Primary Guardian
-       │
-       ▼
-Backup Guardian
-       │
-       ▼
-Family / Trusted Circle
-```
-
-The product vision is privacy-first: a Guardian should not automatically receive permanent access to someone's precise location.
-
-Instead, the user chooses what each Guardian can access and under which conditions.
-
-### Example Guardian view
-
-```text
-Harsha's Walk Home
-
-Started        9:43 PM
-Expected safe  10:05 PM
-Status         On schedule ✓
-Last check-in  1 min ago
-
-[ REQUEST CHECK-IN ]   [ CALL ]
-```
-
----
-
-# ⚙️ Programmable Safety Automations
-
-This is one of SafeCircle's central product ideas:
-
-## **IF something happens → THEN execute my safety plan.**
-
-Examples:
-
-```text
-IF
-    expected-safe time passes
-AND
-    I miss my check-in
-
-THEN
-    ask me if I'm safe
-    ↓
-    notify Primary Guardian
-    ↓
-    notify Backup Guardian
-    ↓
-    release pre-authorized Safety Capsule
-```
-
-The codebase models triggers including:
-
-- `MISSED_CHECK_IN`
-- `ETA_OVERDUE`
-- `ROUTE_DEVIATION`
-- `LOW_BATTERY`
-- `DURESS_PHRASE`
-
-and actions including:
-
-- `PROMPT_USER`
-- `NOTIFY_PRIMARY_GUARDIAN`
-- `NOTIFY_BACKUP_GUARDIAN`
-- `SHARE_SAFETY_CAPSULE`
-
-Think of it as:
-
-> **IFTTT for personal safety — with consent and privacy built in.**
-
----
-
-# 🚨 Progressive Escalation
-
-SafeCircle avoids jumping immediately from “slightly late” to “emergency.”
-
-Instead, users can establish an escalation ladder before the session.
-
-### Prototype policy
-
-| Time | Action |
-|---:|---|
-| **0 min** | Gentle check-in |
-| **+5 min** | Notify Primary Guardian |
-| **+10 min** | Notify Backup Guardian |
-| **+15 min** | Release pre-authorized Safety Capsule |
-
-A production implementation would make these thresholds configurable and execute them through a reliable backend scheduler.
-
----
-
-# 🤫 SafePhrase & Silent Safety
-
-Not every uncomfortable situation allows someone to visibly press an SOS button.
-
-SafeCircle's architecture includes **SafePhrase**, allowing the user to preconfigure discreet phrases.
-
-### Yellow Phrase
-
-> “Something feels wrong. Check on me.”
-
-Signal:
-
-```text
-CHECK_ON_ME
-```
-
-### Red Phrase
-
-Triggers the user's preconfigured silent escalation workflow.
-
-Signal:
-
-```text
-SILENT_ESCALATION
-```
-
-The prototype contains the domain engine for evaluating these phrases. Production implementation requires careful UX, abuse prevention, authentication, and reliable remote escalation infrastructure.
-
----
-
-# 🔐 Safety Capsule
-
-A Safety Capsule is a temporary package of information that the user authorizes **before** escalation.
-
-It is designed to support fields such as:
-
-- Safety Session ID
-- destination
-- last-known location label
-- battery level
-- Guardian instructions
-- timestamps
-- user-approved precise-location access
-- automatic expiration
-
-Example:
-
-```text
-Safety Capsule
-SC-8292
-
-Session       Walk Home
-Destination   Home
-Battery       16%
-Instructions  "Call me first. If I do not answer,
-               contact my backup Guardian."
-
-Precise location:
-LOCKED until configured escalation threshold
-
-Expires automatically
-```
-
-The important principle is:
-
-> **Information should be shared because the user authorized it — not simply because the app collected it.**
-
-A production Safety Capsule should use encryption at rest and in transit, strict authorization, audit logging, and automatic retention/deletion policies.
-
----
-
-# 🔒 Privacy by Design
-
-Personal-safety software can itself create privacy risks.
-
-SafeCircle therefore starts with several design principles:
-
-### 1. Temporary rather than permanent
-
-Safety Sessions have a beginning and an end.
-
-### 2. Minimum necessary sharing
-
-Guardians should see the minimum information needed for the current state.
-
-### 3. Progressive disclosure
-
-Precise information can remain private until a user-defined escalation threshold is reached.
-
-### 4. Explicit consent
-
-The user decides what belongs in a Safety Capsule.
-
-### 5. Explainability
-
-SafeCircle reports conditions such as “check-in missed” rather than making unsupported claims such as “danger detected.”
-
-### 6. Safety should not depend on payment
-
-Core safety/check-in functionality remains available without SafeCircle+.
-
----
-
-# 💎 SafeCircle+ — RevenueCat Integration
-
-SafeCircle uses **RevenueCat** as part of the product architecture rather than adding subscriptions as an afterthought.
-
-### Current integration
-
-| Component | Configuration |
-|---|---|
-| RevenueCat Android SDK | `10.20.0` |
-| RevenueCat UI | `10.20.0` |
-| Entitlement | `safecircle_pro` |
-| Offering | `default` |
-| Packages | `monthly`, `yearly` |
-| Hosted Paywall | ✅ |
-| CustomerInfo refresh | ✅ |
-| Restore Purchases | ✅ |
-| Customer Center | ✅ |
-
-### Entitlement model
-
-```text
-Monthly ─────┐
-             │
-             ├────► safecircle_pro
-             │
-Yearly ──────┘
-```
-
-The application gates premium functionality through the entitlement rather than checking individual product IDs.
-
-This means subscription products can evolve without rewriting feature-access logic.
-
----
-
-# 🆓 Free vs SafeCircle+
-
-Essential safety functionality should never disappear because a subscription expires.
-
-| Capability | Free | SafeCircle+ |
-|---|:---:|:---:|
-| Basic Safety Sessions | ✅ | ✅ |
-| Basic check-ins | ✅ | ✅ |
-| One Guardian | ✅ | ✅ |
-| Walk Home | ✅ | ✅ |
-| Stay With Me | ✅ | ✅ |
-| Unlimited Safety Sessions | — | ✅ |
-| Multiple Guardians | — | ✅ |
-| Advanced Safety Automations | — | ✅ |
-| SafePhrase workflows | — | ✅ |
-| Advanced escalation rules | — | ✅ |
-| Safety Capsule controls | — | ✅ |
-| Guardian Live View | — | ✅ |
-| Family Circle | — | ✅ |
-
-The final packaging may evolve during product validation.
-
----
-
-## 🎬 Hackathon demo
-
-A repeatable 3–4 minute judge walkthrough is available in **[docs/DEMO.md](docs/DEMO.md)**. The Android app also includes **Pro → System health → Judge Demo Mode** to seed, escalate, and resolve the demo deterministically.
-
----
-
-# 📱 Product Surfaces
-
-SafeCircle now exposes the roadmap as real product screens rather than leaving features only in architecture notes.
-
-| Screen | What it demonstrates | Phase |
-|---|---|---|
-| **Today** | Start Safety Sessions, live readiness score, countdown, real battery signal, session-scoped location state, check-in, I'm Safe, ETA extension, escalation preview | 1 + 2 |
-| **Automate** | IF → THEN safety rules, custom automation creation, recurring commute reminders, configurable SafePhrase, local SafePhrase test | 2 + 4 |
-| **Circle** | Guardian Live summary, Guardian invite sharing, Primary/Backup Guardian model, Family Circle creation and member management | 2 + 4 |
-| **Vault** | Android Keystore/AES-GCM capsule storage, privacy mode, encrypted capsule creation, expiry purge, audit trail, session history, Safety Receipt sharing | 3 |
-| **Pro** | RevenueCat `safecircle_pro` status, hosted Paywall, Customer Center, restore purchases, stable account identity, editable Emergency Profile | 1 + 4 |
-
-### Core product loop
-
-```mermaid
-flowchart LR
-    START["Start Safety Session"] --> LIVE["Live session dashboard"]
-    LIVE --> SAFE{"User checks in?"}
-    SAFE -- Yes --> RECEIPT["Resolve + Safety Receipt"]
-    SAFE -- No --> RULES["Safety Automations"]
-    RULES --> CIRCLE["Guardian Circle"]
-    CIRCLE --> VAULT["Authorized Safety Capsule"]
-    VAULT --> RESOLVE["Resolved"]
-    PRO["RevenueCat safecircle_pro"] --> RULES
-    PRO --> CIRCLE
-    PRO --> VAULT
-```
-
-### What is intentionally free
-
-Basic Safety Sessions, check-ins, one Guardian, "I'm Safe", and essential session visibility are not designed to disappear because a subscription expires.
-
-### What SafeCircle+ unlocks
-
-Advanced automations, recurring routines, Family Circles, configurable SafePhrase workflows, and advanced Vault/privacy controls use the RevenueCat entitlement boundary.
-
----
-
-# 🌐 Full-Stack Implementation
-
-SafeCircle is no longer only a client-side prototype. The repository includes an optional deployable **FastAPI backend** and a connected **Guardian Live** web surface.
-
-```text
-Android app
-  ├─ Safety Session state
-  ├─ WorkManager escalation
-  ├─ local encrypted Safety Capsule
-  ├─ offline event queue
-  └─ HttpSafeCircleGateway
-            │
-            ▼
-FastAPI backend
-  ├─ SQLite demo persistence
-  ├─ signed Guardian tokens
-  ├─ privacy-scoped Guardian API
-  ├─ server escalation events
-  ├─ encrypted Safety Capsule at rest
-  ├─ RevenueCat webhook mirror
-  └─ Guardian Live static web portal
-            │
-            ▼
-Trusted Guardian browser
-```
-
-The backend has its own CI workflow and tests for health, owner session operations, Guardian privacy redaction, resolved/expired/revoked Guardian behavior, and RevenueCat webhook handling. Guardian Live observes backend resolution automatically while visible and stops polling at terminal session states.
-
-> The remaining production integration boundary is **push/SMS delivery plus managed production data infrastructure**. The repository intentionally does not pretend those external services are connected without credentials.
-
----
-
-# 🏗️ Architecture
-
-SafeCircle now uses a layered architecture that separates **safety decisions**, **device signals**, **privacy**, **reliability**, **Guardian delivery**, and **monetization**.
-
-```mermaid
-flowchart TB
-    subgraph APP["📱 SafeCircle Android"]
-      UI["Experience Layer
-Safety Sessions • My Circle • SafeCircle+"]
-      STATE["State
-SafetyViewModel"]
-      DOMAIN["Safety Intelligence
-SafetyEngine • EscalationEngine • SafePhraseEngine"]
-      DATA["Repositories
-Session • Automation • Family"]
-      DEVICE["Device Signals
-Battery • Location • Notifications"]
-      BG["Background Reliability
-WorkManager Scheduler"]
-      SEC["Privacy & Security
-Keystore AES-GCM • Safety Capsule"]
-      REL["Reliability
-Audit • Queue • Rate Limit • Receipts"]
-      RC["RevenueCat
-safecircle_pro • Paywall • Customer Center"]
-    end
-
-    subgraph CLOUD["☁️ Cloud Integration Boundary"]
-      GW["SafeCircleGateway"]
-      AUTH["Authenticated Identity"]
-      SYNC["Session Sync"]
-      JOBS["Idempotent Escalation Jobs"]
-      PUSH["Push / SMS Provider"]
-    end
-
-    subgraph GUARDIAN["🛡️ Guardian Surfaces"]
-      WEB["Guardian Web View"]
-      MOBILE["Guardian Mobile / Push"]
-    end
-
-    UI --> STATE
-    STATE --> DOMAIN
-    STATE --> DATA
-    DATA --> DEVICE
-    DATA --> BG
-    DATA --> SEC
-    DOMAIN --> REL
-    UI --> RC
-
-    REL --> GW
-    DATA --> GW
-    GW --> AUTH
-    GW --> SYNC
-    GW --> JOBS
-    JOBS --> PUSH
-    PUSH --> MOBILE
-    SYNC --> WEB
-```
-
-### Safety Session lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> NORMAL: Session starts
-    NORMAL --> ATTENTION: Low battery / signal change
-    NORMAL --> CHECK_IN: ETA threshold
-    ATTENTION --> CHECK_IN: Confirmation required
-    CHECK_IN --> NORMAL: User responds
-    CHECK_IN --> CONCERN: Check-in missed
-    CONCERN --> ESCALATED: Escalation threshold
-    ESCALATED --> RESOLVED: User/Guardian resolves
-    NORMAL --> RESOLVED: I'm Safe
-    RESOLVED --> [*]
-```
-
-### Privacy-first escalation
-
-```mermaid
-sequenceDiagram
-    actor U as User
-    participant A as SafeCircle
-    participant W as WorkManager
-    participant G1 as Primary Guardian
-    participant G2 as Backup Guardian
-    participant C as Safety Capsule
-
-    U->>A: Start Safety Session
-    A->>W: Schedule checkpoints
-    W-->>A: ETA reached
-    A-->>U: Gentle check-in
-
-    alt User is safe
-        U->>A: Check in / extend ETA
-        A->>W: Cancel or reschedule
-    else No response
-        W-->>A: +5 min
-        A-->>G1: Primary escalation
-        W-->>A: +10 min
-        A-->>G2: Backup escalation
-        W-->>A: +15 min
-        A->>C: Release authorized fields
-        C-->>G1: Time-limited access
-    end
-```
-
-See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full component, state-machine, offline-reliability, privacy, and RevenueCat diagrams.
-
----
-
-# 🧰 Technology Stack
-
-| Layer | Technology |
-|---|---|
-| Mobile | Native Android |
-| Language | Kotlin |
-| UI | Android Views + Material Components |
-| Architecture | ViewModel + Repository + Domain engines |
-| Navigation | AndroidX Navigation |
-| State | LiveData |
-| Local persistence | SharedPreferences prototype |
-| Monetization | RevenueCat |
-| Subscription UI | RevenueCat Paywalls |
-| Subscription management | RevenueCat Customer Center |
-| Build | Gradle Kotlin DSL |
-
----
-
-# 📁 Project Structure
-
-```text
-safecircle/
-│
-├── app/
-│   └── src/main/
-│       ├── java/com/harshapriya/safecircle/
-│       │   ├── MainApplication.kt
-│       │   ├── MainActivity.kt
-│       │   │
-│       │   ├── billing/
-│       │   │   └── SubscriptionManager.kt
-│       │   │
-│       │   ├── data/
-│       │   │   ├── Constants.kt
-│       │   │   └── SafetyRepository.kt
-│       │   │
-│       │   ├── domain/
-│       │   │   ├── SafetyEngine.kt
-│       │   │   ├── EscalationEngine.kt
-│       │   │   └── SafePhraseEngine.kt
-│       │   │
-│       │   ├── model/
-│       │   │   ├── SafetyModels.kt
-│       │   │   ├── SafetyAutomation.kt
-│       │   │   └── SafetyCapsule.kt
-│       │   │
-│       │   └── ui/
-│       │       ├── home/
-│       │       ├── circle/
-│       │       ├── profile/
-│       │       └── shared/
-│       │
-│       └── res/
-│           ├── layout/
-│           ├── navigation/
-│           ├── menu/
-│           ├── drawable/
-│           └── values/
-│
-├── docs/
-│   └── ARCHITECTURE.md
-│
-├── gradle/
-│   └── libs.versions.toml
-│
-├── local.properties.example
-└── README.md
-```
-
----
-
-# 🚀 Getting Started
-
-## Prerequisites
-
-- Android Studio
-- JDK compatible with the configured Android Gradle Plugin
-- Android SDK
-- RevenueCat project
-- Google Play / RevenueCat test configuration for purchase testing
-
-## 1. Clone
-
-```bash
-git clone https://github.com/harshapriyag123/safecircle.git
-cd safecircle
-```
-
-## 2. Configure RevenueCat
-
-Copy the example configuration:
+<p align="center">
+  <img src="web/site/assets/app-icon-1024.png" alt="SafeCircle shield and checkmark" width="128">
+</p>
+<h1 align="center">SafeCircle</h1>
+<p align="center"><strong>Temporary safety check-ins. A trusted circle. Privacy on your terms.</strong></p>
+<p align="center">
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="https://github.com/harshapriyag123/safecircle/actions/workflows/android.yml">Download debug APK</a> ·
+  <a href="https://safecircle-site.vercel.app/site">Public preview</a> ·
+  <a href="docs/SHIPATON.md">Shipaton checklist</a> ·
+  <a href="https://github.com/harshapriyag123/safecircle/pull/2">Implementation PR</a>
+</p>
+<p align="center">
+  <a href="https://github.com/harshapriyag123/safecircle/actions/workflows/android.yml"><img src="https://github.com/harshapriyag123/safecircle/actions/workflows/android.yml/badge.svg?branch=shipaton%2Fcompletion&amp;event=pull_request" alt="Android CI status"></a>
+  <img src="https://img.shields.io/badge/Android-8%2B-3ddc84" alt="Android 8 and newer">
+  <img src="https://img.shields.io/badge/Java-17-007396" alt="Java 17">
+  <img src="https://img.shields.io/badge/status-development-f59e0b" alt="Development build">
+</p>
+
+SafeCircle is a native Android safety check-in app with a FastAPI backend, temporary signed Guardian links, a web companion and a reference SwiftUI iOS client. Choose an expected-safe time, check in along the way and give consenting Primary and Backup Guardians a limited view of a session.
+
+**Essential safety stays free.** Optional convenience features use RevenueCat's `safecircle_pro` entitlement. This development build has no configured billing key; successful purchases and provider delivery remain unverified.
+
+## Highlights
+
+- **Free safety workflow:** sessions, check-ins, ETA extensions, marking safe, Guardian links and basic privacy controls.
+- **Clear escalation:** +5 minutes routes to Primary, +10 to Backup, +15 to both. Resolving or changing the ETA cancels obsolete pending jobs.
+- **Durable delivery:** persistent jobs, deduplication, bounded retries and separate queued, provider-accepted and confirmed-delivered states.
+- **Consent and privacy:** signed expiring links, Status Only mode, authorized location disclosure, encrypted capsules and expiry cleanup.
+- **Optional RevenueCat billing:** native paywall, entitlement, restore and Customer Center; webhook processing and authoritative subscriber reconciliation.
+- **Reproducible development:** genuine Gradle wrapper, automated tests/lint/APK builds, Android emulator workflow and iOS simulator CI.
+
+## Screenshots
+
+Actual Android 15 emulator captures from [the verified build](docs/VERIFICATION.md), using local test data. These show the native app, not a successful store purchase or external alert.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/native-home.png" alt="SafeCircle native home with no active session" width="240"></td>
+    <td align="center"><img src="docs/screenshots/native-active-session.png" alt="Active native safety session and expected-safe countdown" width="240"></td>
+    <td align="center"><img src="docs/screenshots/native-privacy.png" alt="Native Safety Vault privacy controls and session audit" width="240"></td>
+  </tr>
+  <tr><td align="center"><strong>Start a session</strong></td><td align="center"><strong>Check in and extend ETA</strong></td><td align="center"><strong>Control privacy</strong></td></tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/native-resolved.png" alt="Native session in its resolved state" width="240"></td>
+    <td align="center"><img src="docs/screenshots/native-profile.png" alt="Free safety and optional premium convenience screen" width="240"></td>
+  </tr>
+  <tr><td align="center"><strong>Mark safe</strong></td><td align="center"><strong>Free safety, optional extras</strong></td></tr>
+</table>
+
+The [website demo screenshot](web/site/assets/guardian-demo.png) depicts a fictional Guardian session and is labeled simulated. The [1024px app icon](web/site/assets/app-icon-1024.png) is exported from the existing native vector.
+
+## Verified results and limits
+
+| Area | Verified evidence | Still needed |
+| --- | --- | --- |
+| Backend | 72 SQLite tests (2 PostgreSQL-only skips), 74 PostgreSQL tests and controlled redeployment persistence passed | Continuous scheduler and real provider delivery |
+| Android | Unit tests, lint, debug APK and Android 15 offline workflow passed, including unresolved-session identity preservation | Store test track, billing configuration and physical-device background tests |
+| iOS reference client | Simulator build with RevenueCat/RevenueCatUI passed | Signing, device purchases and full Android feature parity |
+| Web/Guardian | Desktop/mobile browser checks, signed acknowledgement/resolution and privacy checks passed | Continuous scheduler/provider checks and native demo video |
+| RevenueCat | SDK and server lifecycle/reconciliation code checked | Actual offerings/products, purchases, restore and Customer Center verification |
+
+See [build evidence and checksums](docs/VERIFICATION.md), [gap audit](docs/GAP_AUDIT.md) and the single [external prerequisites list](docs/EXTERNAL_REQUIREMENTS.md). No downloads, revenue, customer feedback, store publication or successful live delivery/purchase is claimed.
+
+## Website status
+
+The public product site is implemented under `web/site/`, with a landing page, screenshots, a labeled simulated demo, privacy policy, support links and testing instructions. The web companion and signed Guardian experience use the backend.
+
+**Vercel website and backend code are deployed:** https://safecircle-site.vercel.app/site
+
+The repository branch `shipaton/completion` deploys automatically to the existing free Hobby project. Landing page, companion and signed Guardian client code are hosted together. A dedicated free Neon database and private production secrets are configured; new monitored sessions additionally require a current alert-worker heartbeat. Native defaults use this origin. Controlled production account/session/Guardian API checks passed using fictional accounts and a manual tick; continuous monitoring, real notifications and store purchases remain unverified. See [Vercel setup](docs/VERCEL_DEPLOYMENT.md).
+
+Run locally at `http://localhost:8080/site/`; open the companion at `http://localhost:8080/app/v4.html`, demo at `http://localhost:8080/site/demo.html` and privacy policy at `http://localhost:8080/site/privacy.html`. Real Guardian links require a signed token. The native video section is marked pending.
+
+## Documentation
+
+- [Android/backend verification and APK](docs/VERIFICATION.md)
+- [Deployment, providers, secrets and storage](docs/DEPLOYMENT.md)
+- [RevenueCat configuration and device test matrix](docs/REVENUECAT.md)
+- [Shipaton requirements, demo script and award assessment](docs/SHIPATON.md)
+- [Screen implementation audit](docs/SCREEN_AUDIT.md)
+- [Remaining external prerequisites](docs/EXTERNAL_REQUIREMENTS.md)
+- [iOS setup](ios/README.md)
+
+## Android setup
+
+Use Java 17, the checked-in Gradle 8.14.3 wrapper, Android Gradle Plugin 8.13.2, Kotlin 2.1.20, Android SDK platform 36 and build tools 35.0.0. The wrapper JAR was generated by official Gradle tooling; its distribution is SHA-256 pinned. Android supports API 26+ and targets API 36.
+
+Install Android Studio or command-line SDK tools. Create an ignored `local.properties`:
 
 ```properties
-# local.properties
-sdk.dir=/your/android/sdk/path
-REVENUECAT_API_KEY=test_your_public_sdk_key_here
+sdk.dir=/absolute/path/to/android-sdk
+REVENUECAT_API_KEY=
+SAFECIRCLE_API_BASE_URL=https://your-verified-host.example
 ```
 
-**Do not commit secret RevenueCat backend API keys.**
+The API default is the verified HTTPS Vercel origin. Preserve it unless deliberately testing another backend.
 
-The Android SDK uses a public/client SDK key.
+Set `REVENUECAT_API_KEY` only to your Android public SDK key (`goog_...`; a test-store key is for development only). An empty key disables billing while safety scheduling remains active. Never embed secret API keys or use `proj5f7132ef` as a credential. Do not set a shared demo access token in a distributed build.
 
-## 3. RevenueCat dashboard
-
-Configure:
-
-```text
-Entitlement
-└── safecircle_pro
-
-Offering
-└── default
-    ├── monthly
-    └── yearly
+```sh
+./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Both packages should unlock:
+Android CI repeats these tasks and uploads the APK and reports. Download the latest successful PR run's `safecircle-debug-*` ZIP from [Actions](https://github.com/harshapriyag123/safecircle/actions/workflows/android.yml); unzip `app-debug.apk`. Artifacts expire after 30 days and downloads require GitHub sign-in. Debug installation does not qualify as a public store release.
 
-```text
-safecircle_pro
+The Android start flow is explicitly labeled local, with shared Guardian monitoring unverified. An unresolved session cannot be silently replaced. Server-monitored session creation remains blocked while the deployed worker is unavailable. Sign in and configure distinct E.164 Primary/Backup phone contacts only with their consent. Guardian link creation and SMS provider delivery are separate operations. External notifications require production provider configuration. Use test participants until delivery and background-device behavior are verified.
+
+## Backend and website
+
+```sh
+python -m venv .venv
+. .venv/bin/activate
+pip install -r backend/requirements.txt
+cd backend
+PYTHONPATH=. python -m pytest tests -q
+PYTHONPATH=. python -m uvicorn app.entrypoint:app --port 8080
 ```
 
-Then create and publish a RevenueCat Paywall for the offering.
+Configure variables from `backend/.env.example` in the process environment (the file is a template, not automatically loaded). `/` redirects to `/site/`; `/app/v4.html` is the companion; `/guardian/?token=...` is a real Guardian view requiring a signed link. `/site/demo.html` is explicitly simulated and sends no notifications. `/site/privacy.html` describes current data handling. The video section truthfully marks the native recording as pending.
 
-## 4. Build
+The root Dockerfile supports self-hosting. Production uses the existing Vercel Hobby project with dedicated Neon PostgreSQL. The tested one-minute scheduler adapter is in [scheduler/cloudflare](scheduler/cloudflare/README.md); it requires account access and live verification before monitoring is available.
 
-Open the project in Android Studio, sync Gradle, then build/run on an emulator or Android device.
+## Safety behavior
 
----
+At the expected-safe time, the user should check in. At +5 minutes, jobs route to Primary; +10 to Backup; +15 to both. Jobs are persistent and deduplicated by session, deadline, stage, role and channel. Provider acceptance is not delivery confirmation. Signed callbacks or authenticated receipts confirm delivery. Missing providers keep jobs queued without consuming attempts; definite rejections use bounded retries. Uncertain SMS outcomes wait for a receipt rather than risk a duplicate send. Push adapters must honor the idempotency key.
 
-# 🧪 Hackathon Demo Flow
+Check-ins ensure at least five minutes until the deadline. ETA extension creates a new deadline cycle and cancels old pending jobs. Resolution is terminal and cancels pending jobs. Already accepted messages cannot be recalled. Capsule expiry is capped at 24 hours; the worker purges expired payloads and redacts Guardian data independently of expiry cleanup.
 
-A short demo can tell the entire story.
+## iOS and submission
 
-### Scene 1 — “I'm walking home.”
+See [iOS setup](ios/README.md). CI generates the Xcode project and builds the simulator. Apple public SDK key, store products, signing and device purchase testing remain required if iOS is submitted. The iOS client now has server-confirmed basic sessions/history, role links/contacts and privacy/capsule controls, plus labeled local reminders. Full Android parity and physical/store verification remain incomplete.
 
-Open SafeCircle.
+No downloads, revenue, customer feedback, store listing or successful live delivery/purchase is claimed. Shipaton 2026 standard entries require a qualifying store release; eligible students have the Next Gen exception. The website and debug APK are testing aids.
 
-Show:
+SafeCircle does not dispatch emergency services. Contact local emergency services directly when immediate help is needed.
 
-```text
-Safety Readiness
-92 / 100
-NORMAL
-```
-
-Tap:
-
-> **Start Safety Session → Walk Home**
-
-Explain:
-
-> “Instead of remembering to text someone when I arrive, I create a temporary safety contract with my Circle.”
-
-### Scene 2 — Explainability
-
-Show expected-safe time and active session.
-
-Tap:
-
-> **Demo: simulate concern state**
-
-The state changes based on observable signals.
-
-Explain:
-
-> “SafeCircle isn't claiming AI knows I'm in danger. It tells my Circle exactly what changed.”
-
-### Scene 3 — Guardian Circle
-
-Open **My Circle**.
-
-Explain Primary Guardian → Backup Guardian → Family Circle.
-
-Then explain progressive disclosure:
-
-> “My exact location doesn't need to be visible 24/7. I choose when it becomes available.”
-
-### Scene 4 — Safety Automation
-
-Show the escalation ladder:
-
-```text
-missed check-in
-      ↓
-ask me
-      ↓
-primary guardian
-      ↓
-backup guardian
-      ↓
-Safety Capsule
-```
-
-### Scene 5 — RevenueCat
-
-Open **SafeCircle+**.
-
-Launch the real RevenueCat Paywall.
-
-Show entitlement-based premium access and subscription management.
-
-### Closing line
-
-> **“SafeCircle makes the promise ‘text me when you get home’ programmable.”**
-
----
-
-# 🎯 Why SafeCircle Is Different
-
-### Not just SOS
-
-SafeCircle begins before an emergency.
-
-### Not surveillance
-
-Guardians do not need permanent location access.
-
-### Not a black-box danger score
-
-The Safety Engine explains the conditions behind every state.
-
-### Not a one-person tool
-
-Safety is modeled as a trusted network.
-
-### Not monetization bolted onto a demo
-
-RevenueCat is integrated into the entitlement architecture, Paywall, restore flow, and Customer Center.
-
-### Not “AI says you're unsafe”
-
-SafeCircle keeps the user in control and treats automation as orchestration, not omniscient prediction.
-
----
-
-# 🛣️ Product Roadmap
-
-## Phase 1 — Hackathon Prototype
-
-- [x] Native Android foundation
-- [x] Safety Session modes
-- [x] Safety Readiness
-- [x] Explainable Safety Engine
-- [x] Guardian Circle model
-- [x] Progressive escalation model
-- [x] SafePhrase domain engine
-- [x] Safety Capsule model
-- [x] RevenueCat entitlement integration
-- [x] RevenueCat Paywall
-- [x] Restore purchases
-- [x] Customer Center
-
-## Phase 2 — Connected Safety
-
-- [x] Stable local account identity + cloud identity contract
-- [x] FastAPI session synchronization backend
-- [x] Signed, expiring, revocable Guardian access tokens
-- [x] Guardian Live web portal connected to privacy-scoped API data
-- [x] Android HTTP gateway + offline event reconciliation
-- [x] Immediate + periodic background synchronization
-- [x] Actionable "Check in" / "I'm safe" notifications
-- [x] Background escalation scheduler with WorkManager
-- [x] Real Android battery integration
-- [x] User-consented Android location adapter
-- [x] Dedicated Safety Session setup screen with destination + custom ETA
-- [x] Editable ETA + background job rescheduling
-- [x] Offline event queue
-- [x] Server-side escalation stage engine and event queue
-- [x] Configurable production push webhook + Twilio SMS delivery adapters (credentials required at deploy time)
-- [x] Per-user registration/login, scrypt password hashing, signed access tokens, owner authorization, and Android auth UI
-
-## Phase 3 — Privacy & Reliability
-
-- [x] Android Keystore + AES-GCM Safety Capsule encryption
-- [x] Server-side Safety Capsule encryption at rest
-- [x] Capsule expiry + purge support
-- [x] Privacy modes: status-only, approximate, precise-on-escalation
-- [x] Progressive location disclosure in Guardian API
-- [x] Safety Capsule withheld until escalation threshold
-- [x] Local audit trail
-- [x] Delivery receipt model
-- [x] Idempotent server escalation events
-- [x] Client rate limiting and stale-notification rejection
-- [x] Offline retry queue + server acknowledgement
-- [x] Emergency Profile integration into authorized capsule data
-- [x] Session history + shareable Safety Receipts
-- [x] Threat model
-- [x] System Health diagnostics screen
-- [ ] Production accessibility audit
-- [ ] External security / privacy review
-
-## Phase 4 — SafeCircle Family
-
-- [x] RevenueCat entitlement architecture ready for Family tier
-- [x] RevenueCat-gated advanced Automations, Family Circle, and privacy controls
-- [x] Dedicated Family Circles management screen
-- [x] Multiple local Circles and member roles
-- [x] Recurring commute routine that reschedules itself
-- [x] Advanced IF → THEN Automation Builder screen
-- [x] Configurable + testable SafePhrase flow
-- [x] Guardian Live web experience
-- [x] Cross-platform account/sync gateway contract
-- [x] First-run onboarding and product education
-- [x] FastAPI RevenueCat webhook mirror for server-side entitlement awareness
-- [ ] Create production Family product IDs/offering in store dashboards
-- [x] Native SwiftUI iOS reference client against the same API contract (XcodeGen project included)
-
----
-
-# ⚠️ Prototype & Safety Disclaimer
-
-SafeCircle is currently a **hackathon prototype**, not an emergency-response service.
-
-It should not be relied upon as a substitute for local emergency services, professional security services, or emergency medical systems.
-
-Features described as future/production functionality — including remote Guardian notifications, precise location release, background escalation, and encrypted cloud Safety Capsules — require additional backend infrastructure, security review, platform permissions, reliability engineering, and real-world testing before deployment.
-
-The project intentionally avoids promising that software can determine whether a user is in danger.
-
----
-
-# 🤝 Contributing
-
-Ideas, issues, and pull requests are welcome.
-
-Particularly useful areas:
-
-- Android engineering
-- privacy/security review
-- accessibility
-- reliable notification infrastructure
-- UX research
-- Guardian experience design
-- subscription/paywall experimentation
-
----
-
-# ❤️ Vision
-
-Personal safety should not require choosing between **being alone** and **being constantly tracked**.
-
-SafeCircle imagines a middle ground:
-
-**temporary protection, trusted people, explicit consent, explainable automation, and escalation only when it matters.**
-
-<div align="center">
-
-## 🛡️ SafeCircle
-
-### **Someone should notice.**
-
-**You decide who should notice.  
-You decide what they should know.  
-You decide what should happen when you don't check in.**
-
-</div>
+See [external prerequisites and live checks](docs/EXTERNAL_REQUIREMENTS.md) before treating this build as deployed or submission-ready.

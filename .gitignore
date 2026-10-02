@@ -8,3 +8,15 @@
 .cxx
 local.properties
 /.idea
+
+# Python backend test/build caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Website verification dependencies
+node_modules/
+
+# Local self-hosting credentials and database exports
+.env.selfhost
+.safecircle-data/

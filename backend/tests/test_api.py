@@ -148,7 +148,8 @@ def test_guardian_observes_terminal_resolution_and_sensitive_data_is_withdrawn()
         before = client.get("/v1/public/guardian/" + token)
         assert before.status_code == 200
         assert before.json()["location"]["precision"] == "precise_on_escalation"
-        assert before.json()["safety_capsule"] == {"instruction": "Call me first"}
+        assert before.json()["safety_capsule"]["instruction"] == "Call me first"
+        assert before.json()["safety_capsule"]["expiresAt"] > now
 
         assert client.post("/v1/public/guardian/" + token + "/acknowledge").status_code == 200
         assert client.post("/v1/public/guardian/" + token + "/request-check-in").status_code == 200

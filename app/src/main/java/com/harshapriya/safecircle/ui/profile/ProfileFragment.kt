@@ -80,12 +80,13 @@ class ProfileFragment : Fragment() {
         if (repo.state() != null) {
             AlertDialog.Builder(requireContext())
                 .setTitle("SafeCircle account")
-                .setItems(arrayOf("Stay signed in", "Sign out")) { dialog, which ->
+                .setItems(arrayOf("Stay signed in", "Sign out", "Delete account")) { dialog, which ->
                     if (which == 1) {
                         repo.signOut()
                         renderAccount(account)
                         Toast.makeText(requireContext(), "Signed out", Toast.LENGTH_SHORT).show()
                     }
+                    if (which == 2) showDeleteAccountDialog(account)
                     dialog.dismiss()
                 }
                 .show()
@@ -99,6 +100,25 @@ class ProfileFragment : Fragment() {
             .setNeutralButton("Create account") { _, _ -> showRegisterDialog(account) }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showDeleteAccountDialog(account: TextView) {
+        val password = EditText(requireContext()).apply {
+            hint = "Current password"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Delete SafeCircle account?")
+            .setMessage("This deletes your server and local data and ends pending monitoring. Already sent alerts cannot be recalled. Store subscriptions are not cancelled; manage those in Customer Center or the store.")
+            .setView(password).setPositiveButton("Delete account", null).setNegativeButton("Cancel", null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                runAuth(dialog, account, "Deleting…", "Account deleted") {
+                    AuthRepository(requireContext()).deleteAccount(password.text.toString())
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun showLoginDialog(account: TextView) {
@@ -190,6 +210,7 @@ class ProfileFragment : Fragment() {
         dialog: AlertDialog,
         account: TextView,
         busyText: String,
+        successText: String = "Account authenticated",
         action: () -> Any
     ) {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
@@ -198,13 +219,13 @@ class ProfileFragment : Fragment() {
             runCatching(action).onSuccess {
                 requireActivity().runOnUiThread {
                     renderAccount(account)
-                    Toast.makeText(requireContext(), "Account authenticated", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), successText, Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                 }
             }.onFailure { error ->
                 requireActivity().runOnUiThread {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = if (busyText.startsWith("Creating")) "Create account" else "Sign in"
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = if (busyText.startsWith("Deleting")) "Delete account" else if (busyText.startsWith("Creating")) "Create account" else "Sign in"
                     Toast.makeText(requireContext(), error.message ?: "Authentication failed", Toast.LENGTH_LONG).show()
                 }
             }
@@ -228,26 +249,37 @@ class ProfileFragment : Fragment() {
             setPadding(48, 0, 48, 0)
         }
         val name = EditText(requireContext()).apply { hint = "Display name"; setText(current.displayName) }
-        val contact = EditText(requireContext()).apply { hint = "Primary contact"; setText(current.primaryContact) }
+        val contact = EditText(requireContext()).apply { hint = "Primary phone (+country code)"; setText(current.primaryContact) }
+        val backup = EditText(requireContext()).apply { hint = "Backup phone (+country code)"; setText(current.backupContact) }
+        val consent = android.widget.CheckBox(requireContext()).apply { text = "Both Guardians agreed to receive safety SMS alerts"; isChecked = current.deliveryConsent }
         val language = EditText(requireContext()).apply { hint = "Preferred language"; setText(current.preferredLanguage) }
         val notes = EditText(requireContext()).apply { hint = "Emergency notes (optional)"; setText(current.emergencyNotes) }
         val instruction = EditText(requireContext()).apply { hint = "Guardian instruction"; setText(current.guardianInstruction) }
-        box.addView(name); box.addView(contact); box.addView(language); box.addView(notes); box.addView(instruction)
+        box.addView(name); box.addView(contact); box.addView(backup); box.addView(consent); box.addView(language); box.addView(notes); box.addView(instruction)
 
         AlertDialog.Builder(requireContext())
             .setTitle("Emergency Profile")
             .setMessage("Store only information you intentionally want available to your safety workflow.")
             .setView(box)
             .setPositiveButton("Save") { _, _ ->
+                val phones = listOf(contact.text.toString().trim(), backup.text.toString().trim())
+                if (phones.any { it.isNotEmpty() && !Regex("^\\+[1-9][0-9]{7,14}$").matches(it) } ||
+                    (phones[0].isNotEmpty() && phones[0] == phones[1])) {
+                    Toast.makeText(requireContext(), "Use distinct phone numbers with +country code.", Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
                 emergencyRepo.save(
                     EmergencyProfile(
                         displayName = name.text.toString().trim(),
                         primaryContact = contact.text.toString().trim(),
+                        backupContact = backup.text.toString().trim(),
+                        deliveryConsent = consent.isChecked,
                         preferredLanguage = language.text.toString().ifBlank { "English" },
                         emergencyNotes = notes.text.toString().trim(),
                         guardianInstruction = instruction.text.toString().ifBlank { "Call me first. If I do not answer, contact my backup Guardian." }
                     )
                 )
+                com.harshapriya.safecircle.background.SyncScheduler.syncNow(requireContext())
                 renderEmergencyProfile()
             }
             .setNegativeButton("Cancel", null)

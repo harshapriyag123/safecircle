@@ -63,7 +63,7 @@ Guardian responses are redacted according to `privacy_mode`:
 
 - `STATUS_ONLY` — never returns location
 - `APPROXIMATE` — rounds coordinates
-- `PRECISE_ON_ESCALATION` — exact coordinates only after the configured escalation state/threshold
+- `PRECISE_ON_ESCALATION` — exact coordinates only in `ESCALATED` or after the 15-minute server threshold; `CONCERN` alone does not release them
 
 Safety Capsule data is returned only after the 15-minute escalation stage in this reference policy.
 After session resolution, Guardian responses always remove location and Safety Capsule data. Guardian Live polls only while visible, prevents overlapping requests, and stops permanently when the session resolves or the signed link expires or is revoked.
@@ -93,3 +93,9 @@ Before real-world use:
 - rotate signing keys;
 - add monitoring and alerting;
 - complete privacy/legal/security reviews.
+
+## Implementation audit
+
+See [the gap audit](../docs/GAP_AUDIT.md) for fixes, remaining production work, and verification limits. Optional session fields can be cleared with explicit JSON null in PATCH. Event batches are owner-checked, limited to 500 entries, and deduplicated by account/client event ID.
+
+The RevenueCat mirror preserves paid/grace access after cancellation or billing issues, handles expiration/refunds and lifetime purchases, ignores unrelated events, and rejects stale/duplicate updates. It remains a single-product mirror; use authoritative subscriber reconciliation before relying on transfers or overlapping subscriptions.

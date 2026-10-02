@@ -9,8 +9,8 @@ struct TodayView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Safety Readiness").font(.caption.bold())
-                        Text(model.session == nil ? "92/100" : "84/100").font(.system(size: 42, weight: .bold))
+                        Text("Session status").font(.caption.bold())
+                        Text(model.session == nil ? "No session" : model.session?.resolved == true ? "Resolved" : "Session active").font(.system(size: 42, weight: .bold))
                         Text(model.session?.state ?? "NORMAL").font(.headline)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -19,11 +19,14 @@ struct TodayView: View {
                     if let session = model.session {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(session.mode.replacingOccurrences(of: "_", with: " ")).font(.title2.bold())
-                            Text("Expected safe (session.expectedEndAt.formatted(date: .omitted, time: .shortened))")
+                            Text("Expected safe \(session.expectedEndAt.formatted(date: .omitted, time: .shortened))")
                             if let destination = session.destination { Text(destination).foregroundStyle(.secondary) }
+                            if !session.resolved {
                             HStack {
                                 Button("Check in") { Task { await model.checkIn() } }.buttonStyle(.bordered)
+                                Button("+15 min ETA") { Task { await model.extend() } }.buttonStyle(.bordered)
                                 Button("I'm safe") { Task { await model.resolve() } }.buttonStyle(.borderedProminent)
+                            }.disabled(model.isLoading)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -32,9 +35,12 @@ struct TodayView: View {
 
                     Button("Start Safety Session") { showingSetup = true }
                         .buttonStyle(.borderedProminent).controlSize(.large)
+                    if let message = model.message { Text(message).font(.caption).accessibilityAddTraits(.updatesFrequently) }
+                    Button("Refresh server state") { Task { await model.refresh() } }
                 }.padding()
             }
             .navigationTitle("SafeCircle")
+            .task { await model.refresh() }
             .sheet(isPresented: $showingSetup) { SessionSetupView() }
         }
     }
@@ -56,7 +62,7 @@ struct SessionSetupView: View {
                     Text("Meet Someone").tag("MEET_SOMEONE")
                     Text("Stay With Me").tag("STAY_WITH_ME")
                 }
-                Stepper("Expected duration: (minutes) min", value: $minutes, in: 5...1440, step: 5)
+                Stepper("Expected duration: \(minutes) min", value: $minutes, in: 5...1440, step: 5)
                 TextField("Destination or context", text: $destination)
                 Section("Escalation") {
                     Text("0m Check-in")
@@ -66,10 +72,10 @@ struct SessionSetupView: View {
                 }
                 Button("Start protected session") {
                     Task {
-                        await model.start(mode: mode, minutes: minutes, destination: destination.isEmpty ? nil : destination)
-                        dismiss()
+                        if await model.start(mode: mode, minutes: minutes, destination: destination.isEmpty ? nil : destination) { dismiss() }
                     }
-                }
+                }.disabled(model.isLoading)
+                if let message = model.message { Text(message).font(.caption) }
             }.navigationTitle("Safety Session")
         }
     }

@@ -4,6 +4,7 @@ import hmac
 import json
 import os
 import time
+import uuid
 from typing import Any
 
 API_SECRET = os.getenv("SAFECIRCLE_API_SECRET", "dev-only-change-me")
@@ -103,6 +104,7 @@ def sign_access_token(user_id: str) -> str:
         "sub": user_id,
         "exp": int(time.time()) + ACCESS_TOKEN_TTL_SECONDS,
         "typ": "access",
+        "jti": uuid.uuid4().hex,
     }
     body = _b64_encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode())
     signature = hmac.new(ACCESS_TOKEN_SECRET.encode(), body.encode(), hashlib.sha256).digest()
@@ -120,6 +122,9 @@ def verify_access_token(token: str) -> dict[str, Any]:
         raise PermissionError("Invalid access token type")
     if int(payload["exp"]) < int(time.time()):
         raise PermissionError("Access token expired")
+    from .account_controls import denied
+    if denied(token, str(payload["sub"])):
+        raise PermissionError("Access revoked")
     return payload
 
 

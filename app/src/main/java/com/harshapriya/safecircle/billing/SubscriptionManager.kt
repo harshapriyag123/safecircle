@@ -7,6 +7,8 @@ import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.getCustomerInfoWith
 import com.revenuecat.purchases.restorePurchasesWith
+import com.revenuecat.purchases.logInWith
+import com.revenuecat.purchases.logOutWith
 
 object SubscriptionManager {
     private val _isPro = MutableLiveData(false)
@@ -14,6 +16,21 @@ object SubscriptionManager {
 
     private val _status = MutableLiveData("Free")
     val status: LiveData<String> = _status
+
+    fun identify(userId: String?) {
+        _isPro.postValue(false)
+        _status.postValue("Free plan")
+        if (!Purchases.isConfigured) return
+        if (userId != null) {
+            Purchases.sharedInstance.logInWith(userId,
+                onError = { _status.postValue("Billing account sync failed; retry sign-in") },
+                onSuccess = { info, _ -> update(info) })
+        } else if (!Purchases.sharedInstance.isAnonymous) {
+            Purchases.sharedInstance.logOutWith(
+                onError = { _status.postValue("Billing sign-out failed; restart before purchasing") },
+                onSuccess = { update(it) })
+        }
+    }
 
     fun update(info: CustomerInfo) {
         val active = info.entitlements.active[Constants.ENTITLEMENT_ID] != null

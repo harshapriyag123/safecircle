@@ -4,7 +4,7 @@ struct SafeCircleAPI {
     var baseURL: URL {
         if let raw = UserDefaults.standard.string(forKey: "api_base_url"),
            let url = URL(string: raw) { return url }
-        return URL(string: "https://safecircle-production-5a32.up.railway.app")!
+        return URL(string: "https://safecircle-site.vercel.app")!
     }
 
     func register(email: String, password: String) async throws -> AuthState {
@@ -34,11 +34,26 @@ struct SafeCircleAPI {
             "expected_end_at": Int(session.expectedEndAt.timeIntervalSince1970 * 1000),
             "last_check_in_at": Int(session.lastCheckInAt.timeIntervalSince1970 * 1000),
             "state": session.state,
-            "privacy_mode": "PRECISE_ON_ESCALATION",
+            "privacy_mode": session.privacyMode ?? UserDefaults.standard.string(forKey: "location_privacy") ?? "STATUS_ONLY",
             "resolved": session.resolved
         ]
+        if let battery = session.batteryPercent { body["battery_percent"] = battery }
         if let destination = session.destination { body["destination"] = destination }
         try await post(path: "/v1/sessions", body: body, token: token)
+    }
+
+    func logout(token: String) async throws {
+        try await post(path: "/v1/auth/logout", body: [:], token: token)
+    }
+
+    func deleteAccount(email: String, password: String, token: String) async throws {
+        var request = URLRequest(url: baseURL.appending(path: "/v1/account"))
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["email": email, "password": password])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data)
     }
 
     func checkIn(_ sessionId: String, token: String) async throws {
@@ -49,7 +64,7 @@ struct SafeCircleAPI {
         try await post(path: "/v1/sessions/\(sessionId)/resolve", body: [:], token: token)
     }
 
-    func createGuardianInvite(sessionId: String, ownerId: String, token: String) async throws -> GuardianInviteResponse {
+    func createGuardianInvite(sessionId: String, ownerId: String, role: String, token: String) async throws -> GuardianInviteResponse {
         var request = URLRequest(url: baseURL.appending(path: "/v1/guardian-invites"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -57,12 +72,49 @@ struct SafeCircleAPI {
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "session_id": sessionId,
             "owner_id": ownerId,
-            "role": "guardian",
+            "role": role,
             "ttl_minutes": 1440
         ])
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response, data: data)
         return try JSONDecoder().decode(GuardianInviteResponse.self, from: data)
+    }
+
+    func activeSession(token: String) async throws -> SafetySession? {
+        struct Envelope: Decodable { let session: SafetySession? }
+        let data = try await request(path: "/v1/me/active-session", token: token)
+        return try decoder.decode(Envelope.self, from: data).session
+    }
+
+    func history(token: String) async throws -> [HistoryEntry] {
+        struct Envelope: Decodable { let sessions: [HistoryEntry] }
+        return try decoder.decode(Envelope.self, from: await request(path: "/v1/me/history", token: token)).sessions
+    }
+
+    func session(_ id: String, token: String) async throws -> SafetySession {
+        try decoder.decode(SafetySession.self, from: await request(path: "/v1/sessions/\(id)", token: token))
+    }
+
+    func patch(_ id: String, body: [String: Any], token: String) async throws -> SafetySession {
+        struct Envelope: Decodable { let session: SafetySession }
+        let data = try await request(path: "/v1/sessions/\(id)", method: "PATCH", body: body, token: token)
+        return try decoder.decode(Envelope.self, from: data).session
+    }
+
+    private var decoder: JSONDecoder {
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .millisecondsSince1970
+        return decoder
+    }
+
+    private func request(path: String, method: String = "GET", body: [String: Any]? = nil, token: String) async throws -> Data {
+        var request = URLRequest(url: baseURL.appending(path: path))
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body { request.httpBody = try JSONSerialization.data(withJSONObject: body) }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data)
+        return data
     }
 
     private func post(path: String, body: [String: Any], token: String) async throws {

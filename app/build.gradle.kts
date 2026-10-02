@@ -9,21 +9,24 @@ val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use(::load)
 }
-val revenueCatApiKey = localProperties.getProperty("REVENUECAT_API_KEY", "")
+val revenueCatApiKey = localProperties.getProperty("REVENUECAT_API_KEY", "").trim()
+require(revenueCatApiKey.isEmpty() || revenueCatApiKey.startsWith("goog_") || revenueCatApiKey.startsWith("test_")) {
+    "REVENUECAT_API_KEY must be an Android public SDK key; project IDs and secret keys cannot be embedded."
+}
 val safeCircleApiBaseUrl = localProperties.getProperty(
     "SAFECIRCLE_API_BASE_URL",
-    "https://safecircle-production-5a32.up.railway.app"
+    "https://safecircle-site.vercel.app"
 )
 val safeCircleDemoApiToken = localProperties.getProperty("SAFECIRCLE_DEMO_API_TOKEN", "")
 
 android {
     namespace = "com.harshapriya.safecircle"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.harshapriya.safecircle"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

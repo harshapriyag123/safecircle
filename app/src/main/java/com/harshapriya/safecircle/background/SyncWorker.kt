@@ -1,6 +1,7 @@
 package com.harshapriya.safecircle.background
 
 import android.content.Context
+import com.harshapriya.safecircle.profile.EmergencyProfileRepository
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.harshapriya.safecircle.auth.AccountRepository
@@ -11,7 +12,6 @@ import com.harshapriya.safecircle.platform.LocationProvider
 import com.harshapriya.safecircle.privacy.SafetyPreferencesRepository
 import com.harshapriya.safecircle.reliability.OfflineEventQueue
 import com.harshapriya.safecircle.sync.HttpSafeCircleGateway
-import com.harshapriya.safecircle.sync.LocalDemoGateway
 import com.harshapriya.safecircle.sync.NetworkConfig
 import com.harshapriya.safecircle.sync.SafeCircleGateway
 import com.harshapriya.safecircle.sync.SessionSyncPayload
@@ -27,12 +27,10 @@ class SyncWorker(
         return runCatching {
             val authToken = AuthRepository(applicationContext).state()?.accessToken
             val token = authToken ?: NetworkConfig.demoToken
-            val gateway: SafeCircleGateway =
-                if (NetworkConfig.hasBackend && token.isNotBlank()) {
-                    HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
-                } else {
-                    LocalDemoGateway()
-                }
+            // Keep offline events until a real authenticated gateway can acknowledge them.
+            // A local demonstration must never empty the production queue.
+            if (!NetworkConfig.hasBackend || token.isBlank()) return Result.success()
+            val gateway: SafeCircleGateway = HttpSafeCircleGateway(NetworkConfig.baseUrl, token)
 
             val repo = SafetyRepository(applicationContext)
             val session = repo.currentSession()
@@ -56,7 +54,10 @@ class SyncWorker(
                         longitude = location?.longitude,
                         locationAccuracy = location?.accuracyMeters,
                         privacyMode = privacy.locationMode.name,
+                        shareBatteryOnEscalation = privacy.shareBatteryOnEscalation,
+                        shareDestinationOnEscalation = privacy.shareDestinationOnEscalation,
                         resolved = session.resolved,
+                        guardianContactsJson = EmergencyProfileRepository(applicationContext).deliveryContactsJson(),
                         capsuleJson = if (session.resolved) null else SafetyCapsuleStore(applicationContext).get(session.id),
                         resolvedAt = session.resolvedAt
                     )

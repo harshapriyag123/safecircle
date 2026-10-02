@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 from pathlib import Path
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -20,7 +20,6 @@ from .models import (
     RegisterRequest,
     LoginRequest,
 )
-from .providers import deliver_escalation
 from .security import (
     require_bearer,
     sign_guardian_token,
@@ -107,9 +106,15 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
         "role": role,
     }
 
+    allow_details = not session["resolved"] and (state == "ESCALATED" or (stage is not None and stage >= 15))
+    if not allow_details or not session.get("share_battery_on_escalation"):
+        result["battery_percent"] = None
+    if not allow_details or not session.get("share_destination_on_escalation"):
+        result["destination"] = None
+
     lat = session.get("latitude")
     lon = session.get("longitude")
-    can_reveal_precise = state in {"CONCERN", "ESCALATED"} or (stage is not None and stage >= 15)
+    can_reveal_precise = state == "ESCALATED" or (stage is not None and stage >= 15)
 
     if bool(session["resolved"]):
         result["location"] = None
@@ -129,10 +134,32 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     else:
         result["location"] = None
 
-    if stage is not None and stage >= 15:
-        result["safety_capsule"] = session.get("capsule")
+    capsule = session.get("capsule")
+    capsule_expiry = capsule.get("expiresAt") if isinstance(capsule, dict) else None
+    capsule_current = capsule_expiry is None or (
+        isinstance(capsule_expiry, (int, float)) and capsule_expiry > now_ms()
+    )
+    if stage is not None and stage >= 15 and capsule_current:
+        allowed = {"sessionId", "createdAt", "expiresAt", "destinationLabel", "batteryPercent", "destination", "battery", "instructions",
+                   "guardianInstructions", "instruction"}
+        import math
+        numeric_fields = {'createdAt', 'expiresAt', 'battery', 'batteryPercent'}
+        result['safety_capsule'] = {
+            key: value for key, value in (capsule or {}).items() if key in allowed and (
+                (key in numeric_fields and isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value))
+                or (key not in numeric_fields and isinstance(value, str) and len(value) <= 2048)
+            )
+        }
     else:
         result["safety_capsule"] = None
+
+    if isinstance(result.get('safety_capsule'), dict):
+        for field in ('battery', 'batteryPercent'):
+            if not session.get('share_battery_on_escalation'):
+                result['safety_capsule'].pop(field, None)
+        for field in ('destination', 'destinationLabel'):
+            if not session.get('share_destination_on_escalation'):
+                result['safety_capsule'].pop(field, None)
 
     guardian_events = [
         event
@@ -151,45 +178,28 @@ def public_snapshot(session: dict[str, Any], role: str) -> dict[str, Any]:
     return result
 
 
+async def worker_tick() -> None:
+    from .delivery import schedule_escalations, process_delivery
+    current = now_ms()
+    for session in db.active_sessions():
+        schedule_escalations(session, current)
+    for _ in range(3 if os.getenv("SAFECIRCLE_WORKER_MODE") == "external" else 50):
+        if not await asyncio.to_thread(process_delivery, now_ms()):
+            break
+    db.purge_expired_capsules(current)
+    from .revenuecat import reconcile_pending
+    await asyncio.to_thread(reconcile_pending, current, 2 if os.getenv("SAFECIRCLE_WORKER_MODE") == "external" else 10)
+    db.record_worker_tick(now_ms())
+
+
 async def escalation_loop(stop: asyncio.Event) -> None:
+    import logging
     while not stop.is_set():
-        current = now_ms()
-        for session in db.active_sessions():
-            stage = stage_for_session(session, current)
-            if stage is None:
-                continue
-
-            created = db.append_event(
-                session["id"],
-                "ESCALATION_STAGE",
-                {
-                    "state": session["state"],
-                    "stage_minutes": stage,
-                    "expected_end_at": session["expected_end_at"],
-                },
-                stage_minutes=stage,
-            )
-            if created and stage >= 5:
-                results = await asyncio.to_thread(deliver_escalation, session, stage)
-                if not results:
-                    db.append_event(
-                        session["id"],
-                        "GUARDIAN_DELIVERY_PENDING",
-                        {"stage_minutes": stage, "channel": "provider_not_configured"},
-                        stage_minutes=stage,
-                    )
-                for index, result in enumerate(results):
-                    db.append_event(
-                        session["id"],
-                        "GUARDIAN_DELIVERY_" + result.channel.upper() + "_" + str(index),
-                        {
-                            "stage_minutes": stage,
-                            "accepted": result.accepted,
-                            "provider_message_id": result.provider_message_id,
-                            "error": result.error,
-                        },
-                    )
-
+        try:
+            await worker_tick()
+        except Exception:
+            # A failed provider or malformed record must not kill the scheduler.
+            logging.getLogger(__name__).exception("Escalation worker iteration failed")
         try:
             await asyncio.wait_for(stop.wait(), timeout=15)
         except asyncio.TimeoutError:
@@ -198,14 +208,18 @@ async def escalation_loop(stop: asyncio.Event) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .config import validate_production_config
+    validate_production_config()
     db.init_db()
     stop = asyncio.Event()
-    task = asyncio.create_task(escalation_loop(stop))
+    external = os.getenv('SAFECIRCLE_WORKER_MODE') == 'external' or bool(os.getenv('VERCEL'))
+    task = None if external else asyncio.create_task(escalation_loop(stop))
     try:
         yield
     finally:
         stop.set()
-        await task
+        if task is not None:
+            await task
 
 
 app = FastAPI(
@@ -245,6 +259,12 @@ webapp_static = next((path for path in webapp_candidates if path.exists()), None
 if webapp_static is not None:
     app.mount("/app", StaticFiles(directory=webapp_static, html=True), name="webapp")
 
+
+site_static = Path(__file__).resolve().parent.parent.parent / "web" / "site"
+if not site_static.exists():
+    site_static = Path(__file__).resolve().parent.parent / "web" / "site"
+if site_static.exists():
+    app.mount("/site", StaticFiles(directory=site_static, html=True), name="site")
 
 @app.post("/v1/auth/register")
 def register(body: RegisterRequest) -> dict[str, Any]:
@@ -307,6 +327,24 @@ def upsert_session(
         }
 
     data = body.model_dump()
+    if existing is not None:
+        # A snapshot from an earlier deadline/check-in cannot undo a fresh check-in
+        # or restore sensitive fields/consent that the canonical session changed.
+        stale = body.expected_end_at < existing['expected_end_at'] or body.last_check_in_at < existing['last_check_in_at']
+        if stale:
+            for field in ('state', 'privacy_mode', 'capsule', 'guardian_contacts', 'share_battery_on_escalation', 'share_destination_on_escalation'):
+                data[field] = existing.get(field)
+        data['last_check_in_at'] = max(body.last_check_in_at, existing['last_check_in_at'])
+        data["expected_end_at"] = max(data["expected_end_at"], existing["expected_end_at"])
+        if body.last_check_in_at > existing["last_check_in_at"] and data["expected_end_at"] <= now_ms():
+            data["expected_end_at"] = now_ms() + 5 * 60_000
+        # Partial client snapshots must not erase another client's privacy,
+        # capsule, consent or optional telemetry. Explicit null still clears it.
+        for field in ('state', 'privacy_mode', 'capsule', 'guardian_contacts',
+                      'share_battery_on_escalation', 'share_destination_on_escalation',
+                      'destination', 'latitude', 'longitude', 'location_accuracy', 'battery_percent'):
+            if field not in body.model_fields_set:
+                data[field] = existing.get(field)
     transitioned_to_resolved = body.resolved and not bool(existing and existing["resolved"])
     if body.resolved:
         data["state"] = "RESOLVED"
@@ -346,7 +384,10 @@ def patch_session(
     if bool(current["resolved"]):
         raise HTTPException(status_code=409, detail="Resolved sessions are read-only")
 
-    updates = body.model_dump(exclude_none=True)
+    updates = body.model_dump(exclude_unset=True)
+    required_fields = {"expected_end_at", "last_check_in_at", "state", "privacy_mode", "resolved"}
+    if any(updates.get(field) is None for field in required_fields.intersection(updates)):
+        raise HTTPException(status_code=422, detail="Required session fields cannot be cleared")
     resolving = updates.get("resolved") is True
     if resolving:
         updates["state"] = "RESOLVED"
@@ -374,6 +415,7 @@ def check_in(
         raise HTTPException(status_code=409, detail="Resolved sessions cannot be checked in")
 
     session["last_check_in_at"] = now_ms()
+    session["expected_end_at"] = max(session["expected_end_at"], now_ms() + 5 * 60_000)
     session["state"] = "NORMAL"
     db.upsert_session(session)
     db.append_event(session_id, "CHECK_IN", {"source": "owner"})
@@ -420,19 +462,18 @@ def ingest_events(
     body: ClientEventBatch,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
-    acknowledged: list[str] = []
+    user_id = auth_or_401(authorization)
+    # Validate the entire batch before writing anything or acknowledging it.
+    for event in body.events:
+        if event.session_id is not None:
+            session = db.get_session(event.session_id)
+            if session is None:
+                raise HTTPException(status_code=404, detail="Session not found")
+            assert_owner(user_id, session["owner_id"])
 
-    for event in body.events[:500]:
-        db.append_event(
-            event.session_id,
-            "CLIENT_" + event.event_type,
-            {
-                "client_event_id": event.id,
-                "payload": event.payload,
-                "client_created_at": event.created_at,
-            },
-        )
+    acknowledged: list[str] = []
+    for event in body.events:
+        db.append_client_event(user_id, event.model_dump())
         acknowledged.append(event.id)
 
     return {"acknowledged_event_ids": acknowledged}
@@ -519,22 +560,60 @@ def revenuecat_webhook(
     product_id = event.get("product_id")
     expiration_at_ms = event.get("expiration_at_ms")
 
+    affected = {app_user_id} if app_user_id else set()
+    for field in ('aliases', 'transferred_from', 'transferred_to'):
+        values = event.get(field, [])
+        if isinstance(values, list):
+            affected.update(value for value in values if isinstance(value, str) and value)
+    if not affected:
+        if event_type == 'TEST':
+            return {'ok': True, 'ignored': True}
+        raise HTTPException(status_code=400, detail="RevenueCat event is missing customer identifiers")
+    from .revenuecat import enqueue_reconciliation
+    for customer in affected:
+        enqueue_reconciliation(customer, now_ms())
     if not app_user_id:
-        raise HTTPException(status_code=400, detail="RevenueCat event is missing app_user_id")
+        return {'ok': True, 'reconciliation_queued': True, 'event_type': event_type}
 
-    active = "safecircle_pro" in entitlement_ids and event_type not in {
-        "EXPIRATION",
-        "CANCELLATION",
-        "BILLING_ISSUE",
+    if os.getenv("SAFECIRCLE_ENV") == "production" and event.get("environment") == "SANDBOX":
+        return {"ok": True, "ignored": True, "reason": "sandbox_event"}
+
+    supported_types = {
+        "INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE", "UNCANCELLATION",
+        "CANCELLATION", "BILLING_ISSUE", "EXPIRATION", "SUBSCRIPTION_EXTENDED",
+        "SUBSCRIPTION_PAUSED", "REFUND_REVERSED", "TEMPORARY_ENTITLEMENT_GRANT",
     }
+    if event_type not in supported_types or "safecircle_pro" not in entitlement_ids:
+        return {"ok": True, "ignored": True, "event_type": event_type}
+
+    # Cancellation of renewal does not end the current paid period. Billing
+    # grace extends access; expiration and refunds remove it.
+    grace_expiration = event.get("grace_period_expiration_at_ms")
+    try:
+        deadlines = [int(value) for value in (expiration_at_ms, grace_expiration) if value is not None]
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid entitlement expiration") from exc
+    expiration_at_ms = max(deadlines) if deadlines else None
+    refunded = event_type == "CANCELLATION" and event.get("cancel_reason") == "CUSTOMER_SUPPORT"
+    active = (
+        event_type != "EXPIRATION"
+        and not refunded
+        and (expiration_at_ms is None or expiration_at_ms > now_ms())
+    )
+    try:
+        event_timestamp_ms = int(event.get("event_timestamp_ms") or now_ms())
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid event timestamp") from exc
     db.upsert_subscription(
         app_user_id,
         "safecircle_pro",
         active,
         product_id,
         expiration_at_ms,
+        event_timestamp_ms=event_timestamp_ms,
+        event_id=str(event["id"]) if event.get("id") else None,
     )
-    return {"ok": True, "active": active, "event_type": event_type}
+    return {"ok": True, "active": db.get_subscription(app_user_id)["is_active"], "event_type": event_type}
 
 
 @app.get("/v1/subscriptions/{app_user_id}")
@@ -542,7 +621,8 @@ def subscription_status(
     app_user_id: str,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    auth_or_401(authorization)
+    user_id = auth_or_401(authorization)
+    assert_owner(user_id, app_user_id)
     status = db.get_subscription(app_user_id)
     if status is None:
         status = {
@@ -552,4 +632,92 @@ def subscription_status(
             "product_id": None,
             "expiration_at_ms": None,
         }
+    expiration = status.get("expiration_at_ms")
+    if expiration is not None and expiration <= now_ms():
+        status["is_active"] = False
     return {"subscription": status}
+
+
+@app.get("/v1/sessions/{session_id}/deliveries")
+def owner_deliveries(session_id: str, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    user = auth_or_401(authorization)
+    session = db.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    assert_owner(user, session['owner_id'])
+    return {"deliveries": db.delivery_status(session_id)}
+
+
+@app.post("/v1/delivery-receipts/push/{job_id}")
+async def push_delivery_receipt(job_id: str, request: Request,
+                                authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    import hmac
+    secret = os.getenv('SAFECIRCLE_DELIVERY_RECEIPT_SECRET', '')
+    if not secret or not hmac.compare_digest(authorization or '', 'Bearer ' + secret):
+        raise HTTPException(status_code=401, detail='Invalid delivery receipt authentication')
+    try:
+        body = await request.json()
+    except ValueError:
+        raise HTTPException(status_code=422, detail='Expected a JSON receipt object')
+    if not isinstance(body, dict) or body.get('status') not in ('delivered', 'failed'):
+        raise HTTPException(status_code=422, detail='Expected delivered or failed status')
+    job = db.get_delivery(job_id)
+    if job is None or job['channel'] != 'push_webhook':
+        raise HTTPException(status_code=404, detail='Delivery not found')
+    db.mark_delivery_receipt(job_id, body['status'] == 'delivered', now_ms())
+    return {'ok': True}
+
+
+@app.post("/v1/delivery-receipts/twilio/{job_id}")
+async def twilio_delivery_receipt(job_id: str, request: Request) -> dict[str, Any]:
+    import base64
+    import hashlib
+    import hmac
+    from urllib.parse import parse_qs
+    token = os.getenv('TWILIO_AUTH_TOKEN', '')
+    base = os.getenv('SAFECIRCLE_PUBLIC_BASE_URL', '').rstrip('/')
+    fields = parse_qs((await request.body()).decode(), keep_blank_values=True)
+    canonical = base + '/v1/delivery-receipts/twilio/' + job_id
+    canonical += ''.join(key + value for key in sorted(fields) for value in sorted(set(fields[key])))
+    signature = base64.b64encode(hmac.new(token.encode(), canonical.encode(), hashlib.sha1).digest()).decode()
+    if not token or not base or not hmac.compare_digest(signature, request.headers.get('X-Twilio-Signature', '')):
+        raise HTTPException(status_code=401, detail='Invalid Twilio callback signature')
+    job = db.get_delivery(job_id)
+    if job is None or job['channel'] != 'twilio_sms':
+        raise HTTPException(status_code=404, detail='Delivery not found')
+    sid = fields.get('MessageSid', [''])[0]
+    if job['provider_message_id'] and sid != job['provider_message_id']:
+        raise HTTPException(status_code=409, detail='Provider message mismatch')
+    status = fields.get('MessageStatus', [''])[0]
+    if status in {'delivered', 'failed', 'undelivered'}:
+        db.mark_delivery_receipt(job_id, status == 'delivered', now_ms())
+    return {'ok': True}
+
+
+@app.post('/v1/subscriptions/{app_user_id}/reconcile')
+def request_subscription_reconciliation(app_user_id: str, authorization: str | None = Header(default=None)):
+    assert_owner(auth_or_401(authorization), app_user_id)
+    from .revenuecat import enqueue_reconciliation
+    enqueue_reconciliation(app_user_id, now_ms())
+    return {'queued': True}
+
+
+@app.post('/v1/auth/logout')
+def logout_account(authorization: str | None = Header(default=None)):
+    auth_or_401(authorization)
+    from .security import verify_access_token
+    from .account_controls import revoke
+    token = authorization.removeprefix('Bearer ').strip()
+    revoke(token, verify_access_token(token)['exp'])
+    return {'ok': True}
+
+
+@app.delete('/v1/account')
+def delete_owner_account(body: LoginRequest, authorization: str | None = Header(default=None)):
+    user_id = auth_or_401(authorization)
+    user = db.get_user(user_id)
+    if not user or user['email'] != body.email.strip().lower() or not verify_password(body.password, user['password_hash']):
+        raise HTTPException(status_code=401, detail='Reauthentication required')
+    from .account_controls import delete_account
+    delete_account(user_id)
+    return {'deleted': True, 'subscription_notice': 'Deleting SafeCircle data does not cancel a store subscription. Manage it in the store or Customer Center.'}
