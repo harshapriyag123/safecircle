@@ -47,6 +47,7 @@ struct VaultView: View {
                 }
                 if let message = model.message { Section { Text(message) } }
             }.navigationTitle("Safety Vault")
+                .onAppear { instruction = model.session?.capsule?.instruction ?? ""; privacy = model.session?.privacyMode ?? privacy }
                 .onChange(of: model.auth?.userId) { _, _ in instruction = "" }
         }
     }

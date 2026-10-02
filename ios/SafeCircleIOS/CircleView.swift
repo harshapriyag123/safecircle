@@ -35,6 +35,13 @@ struct CircleView: View {
         } catch { model.message = error.localizedDescription }
     }
 
+    private func loadContacts() {
+        let primary = model.session?.guardianContacts?.first { $0.role == "primary" }
+        let backup = model.session?.guardianContacts?.first { $0.role == "backup" }
+        primaryPhone = primary?.phone ?? ""; primaryConsent = primary?.consented ?? false
+        backupPhone = backup?.phone ?? ""; backupConsent = backup?.consented ?? false
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -56,8 +63,9 @@ struct CircleView: View {
                 }
                 if let message = model.message { Section { Text(message) } }
             }.navigationTitle("My Circle")
+                .onAppear { loadContacts() }
                 .onChange(of: model.auth?.userId) { _, _ in primaryURL = nil; backupURL = nil; primaryPhone = ""; backupPhone = ""; primaryConsent = false; backupConsent = false }
-                .onChange(of: model.session?.id) { _, _ in primaryURL = nil; backupURL = nil }
+                .onChange(of: model.session?.id) { _, _ in primaryURL = nil; backupURL = nil; loadContacts() }
                 .onChange(of: model.session?.resolved) { _, resolved in if resolved == true { primaryURL = nil; backupURL = nil } }
         }
     }

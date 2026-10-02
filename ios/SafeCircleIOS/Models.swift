@@ -23,6 +23,9 @@ struct SafetySession: Identifiable, Codable {
     var state: String
     var batteryPercent: Int?
     var resolved: Bool
+    var guardianContacts: [GuardianContact]? = nil
+    var capsule: SafetyCapsule? = nil
+    var privacyMode: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -33,7 +36,9 @@ struct SafetySession: Identifiable, Codable {
         case lastCheckInAt = "last_check_in_at"
         case state
         case batteryPercent = "battery_percent"
-        case resolved
+        case resolved, capsule
+        case guardianContacts = "guardian_contacts"
+        case privacyMode = "privacy_mode"
     }
 }
 
@@ -56,4 +61,14 @@ struct HistoryEntry: Identifiable, Decodable {
     let mode: String
     let resolvedAt: Date
     enum CodingKeys: String, CodingKey { case id, mode; case resolvedAt = "resolved_at" }
+}
+
+struct GuardianContact: Codable {
+    let role: String
+    let phone: String
+    let consented: Bool
+}
+struct SafetyCapsule: Codable {
+    let instruction: String?
+    let expiresAt: Int64?
 }

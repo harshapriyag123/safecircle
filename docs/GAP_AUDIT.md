@@ -40,3 +40,8 @@ Guardian actions, check-in/ETA, escalation redaction, terminal resolution, serve
 history and logout revocation. No contacts/purchases were used. A manual tick is
 not a live scheduler. The latest iOS basic lifecycle/Vault/Circle/Automate controls
 compile in simulator CI; native parity and device/store verification still remain.
+
+A regression additionally preserves omitted privacy, capsule, consent and optional
+telemetry fields across client snapshots while retaining explicit-null clearing.
+Native battery sync now uses a narrow PATCH. Owner capsule/contact values are
+loaded into iOS editors rather than silently replaced by empty controls.

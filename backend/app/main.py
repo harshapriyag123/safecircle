@@ -339,11 +339,13 @@ def upsert_session(
         data["expected_end_at"] = max(data["expected_end_at"], existing["expected_end_at"])
         if body.last_check_in_at > existing["last_check_in_at"] and data["expected_end_at"] <= now_ms():
             data["expected_end_at"] = now_ms() + 5 * 60_000
-        for flag in ("share_battery_on_escalation", "share_destination_on_escalation"):
-            if flag not in body.model_fields_set:
-                data[flag] = existing.get(flag, False)
-        if "guardian_contacts" not in body.model_fields_set:
-            data["guardian_contacts"] = existing.get("guardian_contacts", [])
+        # Partial client snapshots must not erase another client's privacy,
+        # capsule, consent or optional telemetry. Explicit null still clears it.
+        for field in ('state', 'privacy_mode', 'capsule', 'guardian_contacts',
+                      'share_battery_on_escalation', 'share_destination_on_escalation',
+                      'destination', 'latitude', 'longitude', 'location_accuracy', 'battery_percent'):
+            if field not in body.model_fields_set:
+                data[field] = existing.get(field)
     transitioned_to_resolved = body.resolved and not bool(existing and existing["resolved"])
     if body.resolved:
         data["state"] = "RESOLVED"

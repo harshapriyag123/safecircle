@@ -80,11 +80,10 @@ final class AppModel: ObservableObject {
     }
 
     func refreshBatteryAndSync() async {
-        guard var session, let auth, !session.resolved else { return }
-        session.batteryPercent = currentBatteryPercent()
-        self.session = session
-        do { try await api.upsertSession(session, token: auth.accessToken) }
-        catch { message = error.localizedDescription }
+        guard let session, let auth, !session.resolved else { return }
+        do {
+            self.session = try await api.patch(session.id, body: ["battery_percent": currentBatteryPercent() as Any? ?? NSNull()], token: auth.accessToken)
+        } catch { message = error.localizedDescription }
     }
 
     func resolve() async {

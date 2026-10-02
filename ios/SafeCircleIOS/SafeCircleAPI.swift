@@ -34,7 +34,7 @@ struct SafeCircleAPI {
             "expected_end_at": Int(session.expectedEndAt.timeIntervalSince1970 * 1000),
             "last_check_in_at": Int(session.lastCheckInAt.timeIntervalSince1970 * 1000),
             "state": session.state,
-            "privacy_mode": UserDefaults.standard.string(forKey: "location_privacy") ?? "STATUS_ONLY",
+            "privacy_mode": session.privacyMode ?? UserDefaults.standard.string(forKey: "location_privacy") ?? "STATUS_ONLY",
             "resolved": session.resolved
         ]
         if let battery = session.batteryPercent { body["battery_percent"] = battery }

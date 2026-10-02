@@ -2,7 +2,7 @@
 
 Checks and reviewable commits: [PR #2](https://github.com/harshapriyag123/safecircle/pull/2). PR #1 work is preserved.
 
-Verified implementation commit: `23d38ce582f2dcf38d47a784488e2ec7c69434f3` (Actions checks synthetic PR merge `c5a024b7f8a01f01df3193c586a7d9b33be57b95`). All four workflows passed, including Android device-smoke. Subsequent README/screenshots/evidence changes do not change application code.
+Verified implementation commit: `23d38ce582f2dcf38d47a784488e2ec7c69434f3` (Actions checks synthetic PR merge `c5a024b7f8a01f01df3193c586a7d9b33be57b95`). All four workflows passed, including Android device-smoke. The historical evidence below predates the current Vercel changes; current evidence is recorded further down.
 
 | Check | Actual result |
 | --- | --- |
@@ -24,14 +24,40 @@ APK SHA-256: `3f3dfa27da5b3baef0d26a0200321204ee573d8a5150535de959eb3c72bead6b`.
 
 `git diff --check` passed locally. Wrapper generated using checksum-verified official Gradle tooling. Local Android tasks could not reach the environment's Java network proxy; Android verification above uses GitHub-hosted CI. Xcode is unavailable locally.
 
-## Live verification still required
+## Current Vercel implementation verification — 2026-10-02 UTC
 
-No live RevenueCat/store purchase, production provider delivery, Railway deployment, persistent-volume restart, public store eligibility or complete native premium demo video has been verified. The supplied screenshot establishes administrative project ID `proj5f7132ef` only.
+All four workflows passed on commit `24a5a2877c8d0924e4e9f503e9a9bd3f86c51ee1`:
 
-The configured Railway origin `https://safecircle-production-5a32.up.railway.app` returned HTTP 404 “Application not found” at `/health` and `/site/` on October 1. It is not a verified product website. Railway is connected, but no callable Railway tools are exposed in this session. Deployment requires access to the actual service/configuration and persistent storage, followed by HTTPS health/Guardian/provider tests.
+| Check | Evidence |
+|---|---|
+| Backend | [Run 36947929899](https://github.com/harshapriyag123/safecircle/actions/runs/36947929899): 51 SQLite tests passed (2 PostgreSQL-only skips), 53 PostgreSQL tests passed |
+| Android | [Run 36947929871](https://github.com/harshapriyag123/safecircle/actions/runs/36947929871): unit tests, lint, assembleDebug and Android 15 emulator safety workflow passed |
+| Website | [Run 36947930430](https://github.com/harshapriyag123/safecircle/actions/runs/36947930430): actual desktop/mobile landing/Guardian checks plus companion registration, failed-request state preservation, canonical check-in, ETA, role labels, server history and logout isolation |
+| iOS | [Run 36947929885](https://github.com/harshapriyag123/safecircle/actions/runs/36947929885): updated server-backed basic screens compiled for the simulator with RevenueCat/RevenueCatUI |
+| Scheduler adapter | Three Node regression tests passed: one authenticated tick, rejected failures, invalid configuration/redirect protection |
 
-[Native screenshots and result](https://github.com/harshapriyag123/safecircle/actions/runs/36904874195/artifacts/11183706603), also embedded in README. Offline test identity only. Captures show real app UI; no provider or purchase claim. Backup disabled; headings respect system bars in the final tested build.
+[Updated APK artifact](https://github.com/harshapriyag123/safecircle/actions/runs/36947929871/artifacts/11202692715)
+uses `https://safecircle-site.vercel.app` as the native API default. It is a debug
+build with no configured store billing key. GitHub sign-in is required for Actions
+artifacts; unzip `app-debug.apk`. This is not a public store release.
 
-## Free hosting follow-up
+Local checks after the partial-snapshot privacy regression was added: **52 tests
+passed, 2 PostgreSQL-only tests skipped**. This regression ensures omitted fields
+cannot reset privacy or erase capsules/telemetry; explicit null still clears them.
+The latest commit's CI is linked through [PR #2](https://github.com/harshapriyag123/safecircle/pull/2);
+check its head SHA rather than treating historical passes as current evidence.
 
-Latest pre-follow-up PR commit `c5ca698` passed all four workflows (Android run 36907203791, backend 36907203629, iOS 36907203855, website 36907203878). Public static preview deployment succeeded at https://safecircle-public-preview.harsha9944.chatgpt.site/site/. Exported assets checked, and export helper matches deployed source. Self-host secret/configuration checks passed. No live backend or Docker runtime was verified; account-free tunnel was network-blocked. See `FREE_HOSTING.md`. Android was not rebuilt against a static site lacking an API.
+The existing Vercel Hobby project deploys the full website/backend, using a
+dedicated Neon Free database and privately configured independent secrets.
+Controlled production API verification passed registration/login, invalid password,
+worker authorization and a manual tick, owned sessions, Primary/Backup signed
+links/actions, check-in/ETA, escalated privacy redaction, terminal resolution,
+server history and logout revocation. Fictional accounts/coordinates and no
+notification contacts were used. See [deployment](VERCEL_DEPLOYMENT.md).
+
+Continuous monitoring remains blocked on an authorized free scheduler account;
+manual ticks are not ongoing monitoring. No live provider receipt, RevenueCat/store
+purchase/restore, physical-device suspension/reconnect, public store eligibility
+or complete native premium demo video is claimed. The project ID screenshot
+establishes administrative metadata `proj5f7132ef` only. The obsolete Railway
+service is not used or required for this deployment.

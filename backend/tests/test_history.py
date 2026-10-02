@@ -18,3 +18,20 @@ def test_history_is_authenticated_owner_scoped_and_redacted():
         rows = result.json()['sessions']
         assert [r['id'] for r in rows] == ['mineTrue']
         assert 'capsule' not in rows[0] and 'guardian_contacts' not in rows[0]
+
+
+def test_partial_client_snapshot_preserves_privacy_capsule_and_telemetry():
+    with TestClient(app) as client:
+        headers = {'Authorization': 'Bearer ' + sign_access_token('mine')}
+        base = {'id': 'snapshot', 'owner_id': 'mine', 'mode': 'WALK_HOME', 'started_at': 1,
+                'expected_end_at': 2, 'last_check_in_at': 1}
+        assert client.post('/v1/sessions', headers=headers, json={**base,
+            'privacy_mode': 'STATUS_ONLY', 'state': 'CONCERN', 'latitude': 1.2,
+            'capsule': {'instruction': 'keep this', 'expiresAt': 9_000_000_000_000}}).status_code == 200
+        assert client.post('/v1/sessions', headers=headers, json=base).status_code == 200
+        current = client.get('/v1/sessions/snapshot', headers=headers).json()
+        assert current['privacy_mode'] == 'STATUS_ONLY' and current['state'] == 'CONCERN'
+        assert current['capsule']['instruction'] == 'keep this' and current['latitude'] == 1.2
+        assert client.post('/v1/sessions', headers=headers, json={**base, 'capsule': None, 'latitude': None}).status_code == 200
+        current = client.get('/v1/sessions/snapshot', headers=headers).json()
+        assert current['capsule'] is None and current['latitude'] is None
