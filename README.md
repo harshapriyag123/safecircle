@@ -57,10 +57,10 @@ The [website demo screenshot](web/site/assets/guardian-demo.png) depicts a ficti
 
 | Area | Verified evidence | Still needed |
 | --- | --- | --- |
-| Backend | 48 regression tests passed | Production persistence and real provider delivery |
+| Backend | 50 SQLite tests and 51 PostgreSQL tests passed | Production persistence and real provider delivery |
 | Android | 11 unit tests, lint (0 errors; 414 warnings), debug APK and Android 15 offline workflow passed | Store test track, billing configuration and physical-device background tests |
 | iOS reference client | Simulator build with RevenueCat/RevenueCatUI passed | Signing, device purchases and full Android feature parity |
-| Web/Guardian | Desktop/mobile browser checks, signed acknowledgement/resolution and privacy checks passed | Public deployment and complete native demo video |
+| Web/Guardian | Desktop/mobile browser checks, signed acknowledgement/resolution and privacy checks passed | Live production setup and complete native demo video |
 | RevenueCat | SDK and server lifecycle/reconciliation code checked | Actual offerings/products, purchases, restore and Customer Center verification |
 
 See [build evidence and checksums](docs/VERIFICATION.md), [gap audit](docs/GAP_AUDIT.md) and the single [external prerequisites list](docs/EXTERNAL_REQUIREMENTS.md). No downloads, revenue, customer feedback, store publication or successful live delivery/purchase is claimed.
@@ -69,11 +69,9 @@ See [build evidence and checksums](docs/VERIFICATION.md), [gap audit](docs/GAP_A
 
 The public product site is implemented under `web/site/`, with a landing page, screenshots, a labeled simulated demo, privacy policy, support links and testing instructions. The web companion and signed Guardian experience use the backend.
 
-**Public website preview is live:** https://safecircle-site.vercel.app/site
+**Vercel website and backend code are deployed:** https://safecircle-site.vercel.app/site
 
-It serves the landing page and simulated demo; accounts, real Guardian sessions and alerts are not connected there. See [free hosting and self-hosting setup](docs/FREE_HOSTING.md). The Android API URL must point to a separately verified backend.
-
-**No live safety backend has been verified.** The [previously configured Railway origin](https://safecircle-production-5a32.up.railway.app) returned HTTP 404 “Application not found.” It is a diagnostic link, not a working product website. A RevenueCat dashboard URL is not the product website.
+The repository branch `shipaton/completion` deploys automatically to the existing free Hobby project. Landing page, companion and signed Guardian client code are hosted together. Backend routes refuse requests until dedicated PostgreSQL and production secrets are configured; new monitored sessions additionally require a current alert-worker heartbeat. Native defaults now use this origin, but live account, alert and purchase flows remain unverified. See [Vercel setup](docs/VERCEL_DEPLOYMENT.md).
 
 Run locally at `http://localhost:8080/site/`; open the companion at `http://localhost:8080/app/v4.html`, demo at `http://localhost:8080/site/demo.html` and privacy policy at `http://localhost:8080/site/privacy.html`. Real Guardian links require a signed token. The native video section is marked pending.
 

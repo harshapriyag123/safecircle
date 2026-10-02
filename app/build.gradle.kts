@@ -15,7 +15,7 @@ require(revenueCatApiKey.isEmpty() || revenueCatApiKey.startsWith("goog_") || re
 }
 val safeCircleApiBaseUrl = localProperties.getProperty(
     "SAFECIRCLE_API_BASE_URL",
-    "https://safecircle-production-5a32.up.railway.app"
+    "https://safecircle-site.vercel.app"
 )
 val safeCircleDemoApiToken = localProperties.getProperty("SAFECIRCLE_DEMO_API_TOKEN", "")
 

@@ -8,3 +8,16 @@ These are external prerequisites, not completed implementation claims. Do not pa
 4. **Submission eligibility and assets:** qualifying public store listing/release-date/US availability evidence, or confirmed eligible Next Gen student status with academic verification and parental consent if required. Provide Play signing/test-track access; Apple signing/TestFlight access only if iOS is submitted. Record/upload a public native demo using actual configured premium flows (script in `SHIPATON.md`); native emulator screenshots and the 1024px icon can support assets but do not prove store publication. Supply real growth/build-in-public evidence only for awards requiring it.
 
 No downloads, revenue, customer feedback, production deliveries or store publication have been established. Peace Prize is an intended-purpose fit; Design needs polished native evidence; Next Gen is conditional. Optional unrelated sponsor categories should remain blank.
+
+## Current Vercel continuation
+
+1. Approve Vercel Marketplace/Neon terms before creating a dedicated free database
+   and confirm that the available plan remains $0 without paid overages.
+2. Configure its private TLS PostgreSQL URL and independent production secrets
+   listed in VERCEL_DEPLOYMENT.md. Server secrets can be generated securely; they
+   must not be posted in chat or committed.
+3. Provide an always-on worker host for the 15-second tick runner (or complete a
+   tested durable scheduler integration). Daily free cron cannot meet alert timing.
+4. Authorized notification provider configuration and consenting test contacts.
+5. RevenueCat SDK/store credentials, offerings/products, webhook/reconciliation
+   credentials and device/store test access for purchase/restore/Customer Center.

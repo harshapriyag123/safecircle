@@ -73,3 +73,17 @@ Deployment must additionally verify actual registration/login, session creation,
 signed Primary/Backup links, privacy/check-in/ETA/resolution, persistence across
 redeployment, current worker heartbeat, and configured provider receipts. Missing
 credentials or a green build are not evidence that those live flows passed.
+
+## Deployment evidence — 2026-10-02 UTC
+
+Production deployment `9Z6v43mbjwfKeqrbgMgHXipQd4kN` built successfully in
+18 seconds from commit `4e5929b9ecbc4d3c1efab17cac7229f7a82596a0`. Browser
+verification loaded `/site/` and `/app/v4.html` on the requested public domain.
+The site accurately reports backend configuration pending; no live accounts or
+alerts are claimed. Backend CI run 36943959478 passed both SQLite and PostgreSQL,
+and Website CI run 36943959410 passed. External ticks use smaller delivery and
+reconciliation batches to bound provider waits; load testing is still required.
+
+Neon setup is paused before accepting Vercel Marketplace and Neon terms; no
+database was created and no paid plan selected. Production environment currently
+has no application secrets or database URL.

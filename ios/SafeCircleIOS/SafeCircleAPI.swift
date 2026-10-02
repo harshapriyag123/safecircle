@@ -4,7 +4,7 @@ struct SafeCircleAPI {
     var baseURL: URL {
         if let raw = UserDefaults.standard.string(forKey: "api_base_url"),
            let url = URL(string: raw) { return url }
-        return URL(string: "https://safecircle-production-5a32.up.railway.app")!
+        return URL(string: "https://safecircle-site.vercel.app")!
     }
 
     func register(email: String, password: String) async throws -> AuthState {
